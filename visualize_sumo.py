@@ -11,11 +11,11 @@ from configs import ROUTE_SETTINGS
 
 
 def visualize(model: str):
-    settings = ROUTE_SETTINGS["cologne1"]
+    settings = ROUTE_SETTINGS["custom-single-intersection"]
     route_file = settings["path"]
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
-    
+
     duration = end_time - start_time
     env = SumoEnvironment(
         net_file=route_file.format(type="net"),
@@ -26,7 +26,7 @@ def visualize(model: str):
         num_seconds=duration,
     )
     # model = stable_baselines3.PPO.load("./models/xj9bh2nc/model.zip")
-    agent = default_4arm.FourArmIntersection()
+    agent = default_4arm.FourArmIntersection(env.action_space)
 
     obs, _ = env.reset()
     terminate = False
