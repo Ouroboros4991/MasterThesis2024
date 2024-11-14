@@ -105,12 +105,13 @@ def run(args):
     start_time = SETTINGS["begin_time"]
     end_time = SETTINGS["end_time"]
     duration = end_time - start_time
-    experiment_name = f"option_critic_{args.max_steps_total}_steps_{args.num_options}_options_{MODEL}.csv"
+    experiment_name = f"option_critic_{args.num_options}_options_{MODEL}.csv"
 
+    # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
     env = SumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
-        out_csv_name=f"./outputs/oc/{experiment_name}.csv",
+        # out_csv_name=f"./outputs/oc/{experiment_name}.csv",
         single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
@@ -149,7 +150,8 @@ def run(args):
     steps = 0
     while steps < args.max_steps_total:
 
-        rewards = 0
+        cumulative_rewards = 0
+        average_cumulative_rewards = 0.0
         option_lengths = {opt: [] for opt in range(args.num_options)}
 
         obs, _ = env.reset()
@@ -160,7 +162,7 @@ def run(args):
         ep_steps = 0
         option_termination = True
         curr_op_len = 0
-        while not done and ep_steps < duration:
+        while not done:
             epsilon = option_critic.epsilon
 
             if option_termination:
@@ -175,8 +177,8 @@ def run(args):
             action, logp, entropy = option_critic.get_action(state, current_option)
 
             next_obs, reward, done, truncated, info = env.step(action)
+            done = done | truncated
             buffer.push(obs, current_option, reward, next_obs, done)
-            rewards += reward
 
             actor_loss, critic_loss = None, None
             if len(buffer) > args.batch_size:
@@ -212,20 +214,28 @@ def run(args):
             option_termination, greedy_option = (
                 option_critic.predict_option_termination(state, current_option)
             )
-
             # update global steps etc
             steps += 1
             ep_steps += 1
             curr_op_len += 1
             obs = next_obs
+            cumulative_rewards += reward
+            # average_cumulative_rewards *= 0.95
+            # average_cumulative_rewards += 0.05 * cumulative_rewards
 
             logger.log_data(steps, actor_loss, critic_loss, entropy.item(), epsilon)
-        print("episode done", steps)
-        logger.log_episode(steps, rewards, option_lengths, ep_steps, epsilon)
-        if steps % 10000 == 0:
+        logger.log_episode(
+            steps,
+            cumulative_rewards,
+            # average_cumulative_rewards,
+            option_lengths,
+            ep_steps,
+            epsilon,
+        )
+        if steps % 500000 == 0:
             torch.save(
                 {"model_params": option_critic.state_dict()},
-                f"models/{experiment_name}",
+                f"models/{experiment_name}_{steps}_steps",
             )
 
 

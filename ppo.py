@@ -10,7 +10,7 @@ from stable_baselines3.common.monitor import Monitor
 from wandb.integration.sb3 import WandbCallback
 
 from stable_baselines3.common.vec_env import VecMonitor
-
+from stable_baselines3.common.callbacks import CheckpointCallback
 import argparse
 
 from configs import ROUTE_SETTINGS
@@ -25,19 +25,18 @@ def main():
     start_time = SETTINGS["begin_time"]
     end_time = SETTINGS["end_time"]
     duration = end_time - start_time
-    experiment_name = f"ppo_{N_EPISODES}_episode_{MODEL}.csv"
-
+    experiment_name = f"ppo_{MODEL}"
+    # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
     env = SumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
-        out_csv_name=f"./outputs/ppo/{experiment_name}.csv",
+        # out_csv_name=f"./outputs/ppo/{experiment_name}.csv",
         single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
         add_per_agent_info=True,
         add_system_info=True,
     )
-
     print("Environment created")
 
     # env = ss.pettingzoo_env_to_vec_env_v1(env)
@@ -65,7 +64,13 @@ def main():
         tensorboard_log=f"runs/{experiment_name}",
     )
 
-    agent.learn(total_timesteps=duration * N_EPISODES)
+    checkpoint_callback = CheckpointCallback(
+        save_freq=500000,
+        save_path="./models/",
+        name_prefix=experiment_name,
+    )
+
+    agent.learn(total_timesteps=4000000)
     agent.save(f"./models/{experiment_name}")
 
 
