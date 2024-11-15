@@ -1,7 +1,11 @@
-
 ROUTE_SETTINGS = {
     "custom-single-intersection": {
         "path": "sumo_rl/nets/custom-single-intersection/single-intersection.{type}.xml",
+        "begin_time": 0,
+        "end_time": 5000,
+    },
+    "custom-2way-single-intersection": {
+        "path": "sumo_rl/nets/custom-2way-single-intersection/single-intersection.{type}.xml",
         "begin_time": 0,
         "end_time": 5000,
     },
