@@ -20,5 +20,10 @@ pip install sumo-rl
 ```
 
 
+# TODO's
+Check impact of delta time on training
+-> See notes
+TODO: remove default as it does not take into account the delay caused by the yellow lights
+
 # References
 https://github.com/lweitkamp/option-critic-pytorch 

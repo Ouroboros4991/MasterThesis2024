@@ -13,12 +13,11 @@ from utils.util import to_tensor
 from configs import ROUTE_SETTINGS
 
 
-def visualize(model: str):
-    settings = ROUTE_SETTINGS["custom-single-intersection"]
+def visualize():
+    settings = ROUTE_SETTINGS["custom-2way-single-intersection"]
     route_file = settings["path"]
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
-
     duration = end_time - start_time
     env = SumoEnvironment(
         net_file=route_file.format(type="net"),
@@ -27,9 +26,10 @@ def visualize(model: str):
         use_gui=True,
         begin_time=start_time,
         num_seconds=duration,
+        delta_time=12,
     )
-    # model = stable_baselines3.PPO.load("./models/xj9bh2nc/model.zip")
-    # agent = default_4arm.FourArmIntersection(env.action_space)
+    #  agent = default_4arm.FourArmIntersection(env.action_space)
+    # agent = stable_baselines3.PPO.load("./models/xj9bh2nc/model.zip")
     agent = option_critic.OptionCriticFeatures(
         in_features=env.observation_space.shape[0],
         num_actions=env.action_space.n,
@@ -43,7 +43,7 @@ def visualize(model: str):
     )
     agent.load_state_dict(
         torch.load(
-            "./models/option_critic_2_options_custom-single-intersection.csv_4000000_steps"
+            "./models/option_critic_2_options_custom-2way-single-intersection.csv_500000_steps"
         )["model_params"]
     )
     obs, _ = env.reset()
@@ -57,15 +57,14 @@ def visualize(model: str):
     while not terminate:
         if option_termination:
             current_option = greedy_option
+
         try:
             action, _states = agent.predict(obs)
         except AttributeError as e:
             state = agent.get_state(to_tensor(obs))
             action, logp, entropy = agent.get_action(state, current_option)
-
         obs, rewards, dones, truncated, info = env.step(action)
         terminate = dones | truncated
-
         try:
             option_termination, greedy_option = agent.predict_option_termination(
                 state, current_option
@@ -75,4 +74,4 @@ def visualize(model: str):
 
 
 if __name__ == "__main__":
-    visualize("test")
+    visualize()

@@ -15,8 +15,8 @@ import argparse
 
 from configs import ROUTE_SETTINGS
 
-MODEL = "custom-single-intersection"
-SETTINGS = ROUTE_SETTINGS[MODEL]
+TRAFFIC = "custom-2way-single-intersection"
+SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 N_EPISODES = 100
 
 
@@ -25,7 +25,7 @@ def main():
     start_time = SETTINGS["begin_time"]
     end_time = SETTINGS["end_time"]
     duration = end_time - start_time
-    experiment_name = f"ppo_{MODEL}"
+    experiment_name = f"ppo_{TRAFFIC}"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
     env = SumoEnvironment(
         net_file=route_file.format(type="net"),
@@ -70,7 +70,7 @@ def main():
         name_prefix=experiment_name,
     )
 
-    agent.learn(total_timesteps=4000000)
+    agent.learn(total_timesteps=500000)
     agent.save(f"./models/{experiment_name}")
 
 
