@@ -12,8 +12,9 @@ from agents import option_critic
 from utils.util import to_tensor
 from configs import ROUTE_SETTINGS
 
-MODEL = "custom-single-intersection"
-SETTINGS = ROUTE_SETTINGS[MODEL]
+# TRAFFIC = "custom-2way-single-intersection"
+TRAFFIC = "custom-single-intersection"
+SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 
 # Example of the info payload
@@ -32,6 +33,8 @@ SETTINGS = ROUTE_SETTINGS[MODEL]
 
 
 def run_episode(env, agent):
+    np.random.seed(42)
+    torch.manual_seed(42)
     results = []
 
     obs, _ = env.reset()
@@ -42,6 +45,7 @@ def run_episode(env, agent):
     mean_speed = 0.0
 
     terminate = False
+    termination_prob = None
     option_termination = True
     try:
         state = agent.get_state(to_tensor(obs))
@@ -65,14 +69,18 @@ def run_episode(env, agent):
             option_termination, greedy_option = agent.predict_option_termination(
                 state, current_option
             )
+            termination_prob = (
+                agent.get_terminations(state)[:, current_option].sigmoid().tolist()[0]
+            )
         except Exception as e:
             pass
 
         cumulative_reward += rewards
         mean_waiting_time = info["system_mean_waiting_time"]
         mean_speed = info["system_mean_speed"]
-        lane_density = sum(obs[2 : len(obs - 2) // 2])
-
+        lane_density = np.sum(
+            [ts.get_lanes_density() for ts in env.traffic_signals.values()]
+        )
         average_cumulative_reward *= 0.95
         average_cumulative_reward += 0.05 * cumulative_reward
 
@@ -80,6 +88,10 @@ def run_episode(env, agent):
             {
                 "step": info["step"],
                 "option": current_option,
+                "obs": ", ".join([str(n) for n in obs]),
+                "termination_prob": termination_prob,
+                "should_terminate": option_termination,
+                "greedy_option": greedy_option,
                 "cumulative_reward": cumulative_reward,
                 "average_cumulative_reward": average_cumulative_reward,
                 # Get the average waiting time across the episodes
@@ -93,9 +105,9 @@ def run_episode(env, agent):
 
 def single_episodes(env, agent, prefix):
     results = run_episode(env, agent)
-    print(f"./outputs/evaluation/{prefix}_1_episode_{MODEL}.csv")
+    print(f"./outputs/evaluation/{prefix}_1_episode_{TRAFFIC}.csv")
     pd.DataFrame(results).to_csv(
-        f"./outputs/evaluation/{prefix}_1_episode_{MODEL}.csv",
+        f"./outputs/evaluation/{prefix}_1_episode_{TRAFFIC}.csv",
         index=False,
     )
 
@@ -127,7 +139,7 @@ def multiple_episodes(env, agent, prefix):
         )
     print("Writing multiple episodes to csv")
     pd.DataFrame(results).to_csv(
-        f"./outputs/evaluation/{prefix}_{n_episodes}_episode_{MODEL}.csv",
+        f"./outputs/evaluation/{prefix}_{n_episodes}_episode_{TRAFFIC}.csv",
         index=False,
     )
 
@@ -163,10 +175,10 @@ if __name__ == "__main__":
     )
     agent.load_state_dict(
         torch.load(
-            "./models/option_critic_2_options_custom-single-intersection.csv_4000000_steps"
+            "./models/option_critic_4000000_steps_2_options_custom-single-intersection.csv"
         )["model_params"]
     )
 
-    prefix = "oc_4mil_steps"
+    prefix = "oc_single_4mil_steps"
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)
