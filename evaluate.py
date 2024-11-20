@@ -178,7 +178,6 @@ if __name__ == "__main__":
             "./models/option_critic_4000000_steps_2_options_custom-single-intersection.csv"
         )["model_params"]
     )
-
     prefix = "oc_single_4mil_steps"
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)
