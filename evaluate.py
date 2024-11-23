@@ -9,11 +9,12 @@ import torch
 import stable_baselines3
 from agents import default_4arm
 from agents import option_critic
+from agents import option_critic_forced
 from utils.util import to_tensor
 from configs import ROUTE_SETTINGS
 
-# TRAFFIC = "custom-2way-single-intersection"
-TRAFFIC = "custom-single-intersection"
+TRAFFIC = "custom-2way-single-intersection"
+# TRAFFIC = "custom-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 
@@ -162,7 +163,23 @@ if __name__ == "__main__":
 
     # agent = default_4arm.FourArmIntersection(env.action_space)
     # agent = stable_baselines3.PPO.load("./models/ppo_custom-single-intersection.zip")
-    agent = option_critic.OptionCriticFeatures(
+    # agent = option_critic.OptionCriticFeatures(
+    #     in_features=env.observation_space.shape[0],
+    #     num_actions=env.action_space.n,
+    #     num_options=2,
+    #     temperature=0.1,
+    #     eps_start=0.9,
+    #     eps_min=0.1,
+    #     eps_decay=0.999,
+    #     eps_test=0.05,
+    #     device="cpu",
+    # )
+    # agent.load_state_dict(
+    #     torch.load(
+    #         "./models/option_critic_4000000_steps_2_options_custom-single-intersection.csv"
+    #     )["model_params"]
+    # )
+    agent = option_critic_forced.OptionCriticForced(
         in_features=env.observation_space.shape[0],
         num_actions=env.action_space.n,
         num_options=2,
@@ -175,10 +192,10 @@ if __name__ == "__main__":
     )
     agent.load_state_dict(
         torch.load(
-            "./models/option_critic_4000000_steps_2_options_custom-single-intersection.csv"
+            "./models/option_critic_forced_2_options_custom-2way-single-intersection_500000_steps"
         )["model_params"]
     )
 
-    prefix = "oc_single_4mil_steps"
+    prefix = "oc_forced_500k_steps"
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)
