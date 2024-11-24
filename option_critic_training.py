@@ -12,7 +12,7 @@ from agents.option_critic import critic_loss as critic_loss_fn
 from agents.option_critic import actor_loss as actor_loss_fn
 
 from utils.experience_replay import ReplayBuffer
-from utils.util import to_tensor
+from agents.option_critic_utils import to_tensor
 from utils.logger import Logger
 
 import time
@@ -113,6 +113,10 @@ parser.add_argument(
     "--logdir", type=str, default="runs", help="Directory for logging statistics"
 )
 
+parser.add_argument(
+    "--hd_reg", action="store_true", help="Apply Hellinger Distance Regularization"
+)
+
 
 def run(args):
     route_file = SETTINGS["path"]
@@ -120,6 +124,8 @@ def run(args):
     end_time = SETTINGS["end_time"]
     duration = end_time - start_time
     experiment_name = f"{args.agent}_{args.num_options}_options_{TRAFFIC}"
+    if args.hd_reg:
+        experiment_name += "_hd_reg"
 
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
     env = SumoEnvironment(

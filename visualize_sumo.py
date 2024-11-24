@@ -9,7 +9,7 @@ import torch
 import stable_baselines3
 from agents import default_4arm
 from agents import option_critic
-from utils.util import to_tensor
+from agents.option_critic_utils import to_tensor
 from configs import ROUTE_SETTINGS
 
 

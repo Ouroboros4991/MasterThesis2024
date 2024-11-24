@@ -10,7 +10,7 @@ import stable_baselines3
 from agents import default_4arm
 from agents import option_critic
 from agents import option_critic_forced
-from utils.util import to_tensor
+from agents.option_critic_utils import to_tensor
 from configs import ROUTE_SETTINGS
 
 TRAFFIC = "custom-2way-single-intersection"
@@ -70,9 +70,9 @@ def run_episode(env, agent):
             option_termination, greedy_option = agent.predict_option_termination(
                 state, current_option
             )
-            termination_prob = (
-                agent.get_terminations(state)[:, current_option].sigmoid().tolist()[0]
-            )
+            termination_prob = agent.get_terminations(state)[
+                :, current_option
+            ].tolist()[0]
         except Exception as e:
             pass
 
@@ -163,23 +163,7 @@ if __name__ == "__main__":
 
     # agent = default_4arm.FourArmIntersection(env.action_space)
     # agent = stable_baselines3.PPO.load("./models/ppo_custom-single-intersection.zip")
-    # agent = option_critic.OptionCriticFeatures(
-    #     in_features=env.observation_space.shape[0],
-    #     num_actions=env.action_space.n,
-    #     num_options=2,
-    #     temperature=0.1,
-    #     eps_start=0.9,
-    #     eps_min=0.1,
-    #     eps_decay=0.999,
-    #     eps_test=0.05,
-    #     device="cpu",
-    # )
-    # agent.load_state_dict(
-    #     torch.load(
-    #         "./models/option_critic_4000000_steps_2_options_custom-single-intersection.csv"
-    #     )["model_params"]
-    # )
-    agent = option_critic_forced.OptionCriticForced(
+    agent = option_critic.OptionCriticFeatures(
         in_features=env.observation_space.shape[0],
         num_actions=env.action_space.n,
         num_options=2,
@@ -192,10 +176,26 @@ if __name__ == "__main__":
     )
     agent.load_state_dict(
         torch.load(
-            "./models/option_critic_forced_2_options_custom-2way-single-intersection_500000_steps"
+            "./models/option_critic_2_options_custom-2way-single-intersection_500000_steps"
         )["model_params"]
     )
+    # agent = option_critic_forced.OptionCriticForced(
+    #     in_features=env.observation_space.shape[0],
+    #     num_actions=env.action_space.n,
+    #     num_options=2,
+    #     temperature=0.1,
+    #     eps_start=0.9,
+    #     eps_min=0.1,
+    #     eps_decay=0.999,
+    #     eps_test=0.05,
+    #     device="cpu",
+    # )
+    # agent.load_state_dict(
+    #     torch.load(
+    #         "./models/option_critic_forced_2_options_custom-2way-single-intersection_500000_steps"
+    #     )["model_params"]
+    # )
 
-    prefix = "oc_forced_500k_steps"
+    prefix = "oc_2way_500k_steps"
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)

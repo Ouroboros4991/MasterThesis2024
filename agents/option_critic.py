@@ -7,7 +7,7 @@ from torch.distributions import Categorical, Bernoulli
 from math import exp
 import numpy as np
 
-from utils.util import to_tensor
+from agents.option_critic_utils import to_tensor
 
 
 class OptionCriticFeatures(nn.Module):
