@@ -124,5 +124,4 @@ def actor_loss(
     if args.hd_reg:
         hd_reg = __hellinger_regulizer(state, model)
         actor_loss -= hd_reg
-
     return actor_loss
