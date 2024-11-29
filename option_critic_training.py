@@ -6,11 +6,13 @@ import torch
 from copy import deepcopy
 
 from agents.option_critic import OptionCriticFeatures
+from agents.option_critic_forced import OptionCriticForced
+
 from agents.option_critic import critic_loss as critic_loss_fn
 from agents.option_critic import actor_loss as actor_loss_fn
 
 from utils.experience_replay import ReplayBuffer
-from utils.util import to_tensor
+from agents.option_critic_utils import to_tensor
 from utils.logger import Logger
 
 import time
@@ -22,8 +24,20 @@ from configs import ROUTE_SETTINGS
 TRAFFIC = "custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
+agents = {
+    "option_critic": OptionCriticFeatures,
+    "option_critic_forced": OptionCriticForced,
+}
 
 parser = argparse.ArgumentParser(description="Option Critic PyTorch")
+
+parser.add_argument(
+    "--agent",
+    type=str,
+    default="option_critic",
+    choices=agents.keys(),
+    help="Agent to use",
+)
 parser.add_argument(
     "--optimal-eps", type=float, default=0.05, help="Epsilon when playing optimally"
 )
@@ -99,13 +113,19 @@ parser.add_argument(
     "--logdir", type=str, default="runs", help="Directory for logging statistics"
 )
 
+parser.add_argument(
+    "--hd_reg", action="store_true", help="Apply Hellinger Distance Regularization"
+)
+
 
 def run(args):
     route_file = SETTINGS["path"]
     start_time = SETTINGS["begin_time"]
     end_time = SETTINGS["end_time"]
     duration = end_time - start_time
-    experiment_name = f"option_critic_{args.num_options}_options_{TRAFFIC}.csv"
+    experiment_name = f"{args.agent}_{args.num_options}_options_{TRAFFIC}"
+    if args.hd_reg:
+        experiment_name += "_hd_reg"
 
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
     env = SumoEnvironment(
@@ -118,10 +138,9 @@ def run(args):
         add_per_agent_info=True,
         add_system_info=True,
     )
-    option_critic = OptionCriticFeatures
+
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    print(device)
-    option_critic = option_critic(
+    option_critic = agents[args.agent](
         in_features=env.observation_space.shape[0],
         num_actions=env.action_space.n,
         num_options=args.num_options,
