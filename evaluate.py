@@ -163,7 +163,9 @@ if __name__ == "__main__":
     )
 
     # agent = default_4arm.FourArmIntersection(env.action_space)
-    agent = stable_baselines3.PPO.load("./models/ppo_custom-2way-single-intersection.zip")
+    agent = stable_baselines3.PPO.load(
+        "./models/ppo_custom-2way-single-intersection.zip"
+    )
     # agent = option_critic.OptionCriticFeatures(
     #     in_features=env.observation_space.shape[0],
     #     num_actions=env.action_space.n,
@@ -196,7 +198,7 @@ if __name__ == "__main__":
     #         "./models/option_critic_forced_2_options_custom-2way-single-intersection_500000_steps"
     #     )["model_params"]
     # )
-    
+
     # agent = option_critic.OptionCriticFeatures(
     #     in_features=env.observation_space.shape[0],
     #     num_actions=env.action_space.n,
