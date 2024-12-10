@@ -27,11 +27,12 @@ def main():
     duration = end_time - start_time
     experiment_name = f"ppo_{TRAFFIC}"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
+    single_agent = not (TRAFFIC in ('cologne3', 'ingolstadt7'))
     env = SumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
         # out_csv_name=f"./outputs/ppo/{experiment_name}.csv",
-        single_agent=True,
+        single_agent=single_agent,
         begin_time=start_time,
         num_seconds=duration,
         add_per_agent_info=True,

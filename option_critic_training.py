@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import torch
 from copy import deepcopy
+from itertools import permutations
 
 from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
@@ -14,10 +15,8 @@ from agents.option_critic import actor_loss as actor_loss_fn
 from utils.experience_replay import ReplayBuffer
 from agents.option_critic_utils import to_tensor
 from utils.logger import Logger
-
+from utils.custom_env import CustomSumoEnvironment
 import time
-
-from sumo_rl import SumoEnvironment
 
 from configs import ROUTE_SETTINGS
 
@@ -128,7 +127,7 @@ def run(args):
         experiment_name += "_hd_reg"
 
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = SumoEnvironment(
+    env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
         # out_csv_name=f"./outputs/oc/{experiment_name}.csv",
@@ -140,9 +139,17 @@ def run(args):
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+
+    # Update action space based on the number of traffic lights
+    # This is done by getting all possible permutations of the action space and the number of traffic lights
+    # The action space contains the amount of possible configurations in 1 traffic light 
+    # The end result is a list of all possible configurations across the traffic lights  
+    traffic_lights = env.ts_ids
+    action_space = [config for config in permutations(range(env.action_space.n), len(traffic_lights))]
+    
     option_critic = agents[args.agent](
         in_features=env.observation_space.shape[0],
-        num_actions=env.action_space.n,
+        num_actions=len(action_space),
         num_options=args.num_options,
         temperature=args.temp,
         eps_start=args.epsilon_start,
@@ -172,7 +179,6 @@ def run(args):
         cumulative_rewards = 0
         average_cumulative_rewards = 0.0
         option_lengths = {opt: [] for opt in range(args.num_options)}
-
         obs, _ = env.reset()
         state = option_critic.get_state(to_tensor(obs))
         greedy_option = option_critic.greedy_option(state)
@@ -195,7 +201,13 @@ def run(args):
 
             action, logp, entropy = option_critic.get_action(state, current_option)
 
-            next_obs, reward, done, truncated, info = env.step(action)
+            # Convert the single action to the correct mapping of configs per traffic light
+            action_dict = {}
+            for index, a in enumerate(action_space[action]):
+                traffic_light = traffic_lights[index]
+                action_dict[traffic_light] = a
+
+            next_obs, reward, done, truncated, info = env.step(action_dict)
             done = done | truncated
             buffer.push(obs, current_option, reward, next_obs, done)
 
