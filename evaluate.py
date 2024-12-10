@@ -179,7 +179,7 @@ if __name__ == "__main__":
     )
     agent.load_state_dict(
         torch.load(
-            "./models/option_critic_2_options_custom-2way-single-intersection_1000000_steps"
+            "./models/option_critic_2_options_custom-2way-single-intersection_hd_reg_sum_500000_steps"
         )["model_params"]
     )
     # agent = option_critic_forced.OptionCriticForced(
@@ -216,6 +216,6 @@ if __name__ == "__main__":
     #     )["model_params"]
     # )
 
-    prefix = "oc_1mil_steps"
+    prefix = "oc_hd_sum_steps"
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)

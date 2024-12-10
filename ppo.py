@@ -1,13 +1,13 @@
 import numpy as np
 import operator
-import wandb
+# import wandb
 
 from sumo_rl import SumoEnvironment
 import gymnasium as gym
-import supersuit as ss
+# import supersuit as ss
 import stable_baselines3
 from stable_baselines3.common.monitor import Monitor
-from wandb.integration.sb3 import WandbCallback
+# from wandb.integration.sb3 import WandbCallback
 
 from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3.common.callbacks import CheckpointCallback
@@ -15,7 +15,7 @@ import argparse
 
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "custom-2way-single-intersection"
+TRAFFIC = "cologne3" #"custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 N_EPISODES = 100
 

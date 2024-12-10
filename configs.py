@@ -19,6 +19,11 @@ ROUTE_SETTINGS = {
         "begin_time": 25200,
         "end_time": 28800,
     },
+    "cologne3": {
+        "path": "sumo_rl/nets/RESCO/cologne3/cologne3.{type}.xml",
+        "begin_time": 25200,
+        "end_time": 28800,
+    },
     "ingolstadt1": {
         "path": "sumo_rl/nets/RESCO/ingolstadt1/ingolstadt1.{type}.xml",
         "begin_time": 57600,
