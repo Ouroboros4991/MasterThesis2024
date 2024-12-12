@@ -31,6 +31,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 import argparse
 
 from configs import ROUTE_SETTINGS
+from utils.custom_env import custom_parallel_env
 
 TRAFFIC = "cologne3"  # "custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     register_env(
         TRAFFIC,
         lambda _: ParallelPettingZooEnv(
-            sumo_rl.parallel_env(
+            custom_parallel_env(
                 net_file=route_file.format(type="net"),
                 route_file=route_file.format(type="rou"),
                 # out_csv_name="outputs/4x4grid/ppo",
@@ -70,6 +71,7 @@ if __name__ == "__main__":
                 num_seconds=duration,
                 add_per_agent_info=True,
                 add_system_info=True,
+                single_agent=False,
             )
         ),
     )
