@@ -1,12 +1,15 @@
 import numpy as np
 import operator
+
 # import wandb
 
 from sumo_rl import SumoEnvironment
 import gymnasium as gym
+
 # import supersuit as ss
 import stable_baselines3
 from stable_baselines3.common.monitor import Monitor
+
 # from wandb.integration.sb3 import WandbCallback
 
 from stable_baselines3.common.vec_env import VecMonitor
@@ -15,9 +18,9 @@ import argparse
 
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "cologne3" #"custom-2way-single-intersection"
+TRAFFIC = "cologne3"  # "custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
-N_EPISODES = 100
+N_EPISODES = 250  # 100
 
 
 def main():
@@ -27,7 +30,7 @@ def main():
     duration = end_time - start_time
     experiment_name = f"ppo_{TRAFFIC}"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    single_agent = not (TRAFFIC in ('cologne3', 'ingolstadt7'))
+    single_agent = not (TRAFFIC in ("cologne3", "ingolstadt7"))
     env = SumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
@@ -65,11 +68,11 @@ def main():
         tensorboard_log=f"runs/{experiment_name}",
     )
 
-    checkpoint_callback = CheckpointCallback(
-        save_freq=500000,
-        save_path="./models/",
-        name_prefix=experiment_name,
-    )
+    # checkpoint_callback = CheckpointCallback(
+    #     save_freq=500000,
+    #     save_path="./models/",
+    #     name_prefix=experiment_name,
+    # )
 
     agent.learn(total_timesteps=500000)
     agent.save(f"./models/{experiment_name}")
