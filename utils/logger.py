@@ -28,7 +28,7 @@ class Logger:
             datefmt="%Y/%m/%d %I:%M:%S %p",
         )
 
-    def log_episode(self, steps, reward, option_lengths, ep_steps, epsilon):
+    def log_episode(self, steps, reward, ep_steps, epsilon):
         self.n_eps += 1
         logging.info(
             f"> ep {self.n_eps} done. total_steps={steps} | reward={reward} | episode_steps={ep_steps} "
@@ -41,19 +41,19 @@ class Logger:
             tag="episode_lengths", scalar_value=ep_steps, global_step=self.n_eps
         )
 
-        # Keep track of options statistics
-        for option, lens in option_lengths.items():
-            # Need better statistics for this one, point average is terrible in this case
-            self.writer.add_scalar(
-                tag=f"option_{option}_avg_length",
-                scalar_value=np.mean(lens) if len(lens) > 0 else 0,
-                global_step=self.n_eps,
-            )
-            self.writer.add_scalar(
-                tag=f"option_{option}_active",
-                scalar_value=sum(lens) / ep_steps,
-                global_step=self.n_eps,
-            )
+        # # Keep track of options statistics
+        # for option, lens in option_lengths.items():
+        #     # Need better statistics for this one, point average is terrible in this case
+        #     self.writer.add_scalar(
+        #         tag=f"option_{option}_avg_length",
+        #         scalar_value=np.mean(lens) if len(lens) > 0 else 0,
+        #         global_step=self.n_eps,
+        #     )
+        #     self.writer.add_scalar(
+        #         tag=f"option_{option}_active",
+        #         scalar_value=sum(lens) / ep_steps,
+        #         global_step=self.n_eps,
+        #     )
 
     def log_data(self, step, actor_loss, critic_loss, entropy, epsilon):
         if actor_loss:

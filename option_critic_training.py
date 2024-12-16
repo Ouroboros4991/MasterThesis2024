@@ -8,23 +8,25 @@ from itertools import permutations
 
 from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
+from agents.option_critic_multi_ts import OptionCriticMultiTrafficLights
 
-from agents.option_critic import critic_loss as critic_loss_fn
-from agents.option_critic import actor_loss as actor_loss_fn
+from agents.option_critic_utils import critic_loss as critic_loss_fn
+from agents.option_critic_utils import actor_loss as actor_loss_fn
+from agents.option_critic_utils import to_tensor
 
 from utils.experience_replay import ReplayBuffer
-from agents.option_critic_utils import to_tensor
 from utils.logger import Logger
 from utils.custom_env import CustomSumoEnvironment
 import time
 
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "custom-2way-single-intersection"
+TRAFFIC = "cologne3"  # "custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 agents = {
     "option_critic": OptionCriticFeatures,
+    "option_critic_multi": OptionCriticMultiTrafficLights,
     "option_critic_forced": OptionCriticForced,
 }
 
@@ -33,7 +35,7 @@ parser = argparse.ArgumentParser(description="Option Critic PyTorch")
 parser.add_argument(
     "--agent",
     type=str,
-    default="option_critic",
+    default="option_critic_multi",
     choices=agents.keys(),
     help="Agent to use",
 )
@@ -140,16 +142,8 @@ def run(args):
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    # Update action space based on the number of traffic lights
-    # This is done by getting all possible permutations of the action space and the number of traffic lights
-    # The action space contains the amount of possible configurations in 1 traffic light 
-    # The end result is a list of all possible configurations across the traffic lights  
-    traffic_lights = env.ts_ids
-    action_space = [config for config in permutations(range(env.action_space.n), len(traffic_lights))]
-    
     option_critic = agents[args.agent](
-        in_features=env.observation_space.shape[0],
-        num_actions=len(action_space),
+        env=env,
         num_options=args.num_options,
         temperature=args.temp,
         eps_start=args.epsilon_start,
@@ -178,7 +172,6 @@ def run(args):
 
         cumulative_rewards = 0
         average_cumulative_rewards = 0.0
-        option_lengths = {opt: [] for opt in range(args.num_options)}
         obs, _ = env.reset()
         state = option_critic.get_state(to_tensor(obs))
         greedy_option = option_critic.greedy_option(state)
@@ -191,7 +184,6 @@ def run(args):
             epsilon = option_critic.epsilon
 
             if option_termination:
-                option_lengths[current_option].append(curr_op_len)
                 current_option = (
                     np.random.choice(args.num_options)
                     if np.random.rand() < epsilon
@@ -200,17 +192,9 @@ def run(args):
                 curr_op_len = 0
 
             action, logp, entropy = option_critic.get_action(state, current_option)
-
-            # Convert the single action to the correct mapping of configs per traffic light
-            action_dict = {}
-            for index, a in enumerate(action_space[action]):
-                traffic_light = traffic_lights[index]
-                action_dict[traffic_light] = a
-
-            next_obs, reward, done, truncated, info = env.step(action_dict)
+            next_obs, reward, done, truncated, info = env.step(action)
             done = done | truncated
             buffer.push(obs, current_option, reward, next_obs, done)
-
             actor_loss, critic_loss = None, None
             if len(buffer) > args.batch_size:
                 actor_loss = actor_loss_fn(
@@ -259,15 +243,18 @@ def run(args):
             steps,
             cumulative_rewards,
             # average_cumulative_rewards,
-            option_lengths,
             ep_steps,
             epsilon,
         )
-        if steps % 500000 == 0:
+        if steps % (duration * 50) == 0:
             torch.save(
                 {"model_params": option_critic.state_dict()},
-                f"models/{experiment_name}_{steps}_steps",
+                f"models/{experiment_name}__steps",
             )
+    torch.save(
+        {"model_params": option_critic.state_dict()},
+        f"models/{experiment_name}__steps",
+    )
 
 
 if __name__ == "__main__":

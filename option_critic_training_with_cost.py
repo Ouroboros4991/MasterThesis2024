@@ -8,11 +8,11 @@ from copy import deepcopy
 from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
 
-from agents.option_critic import critic_loss as critic_loss_fn
-from agents.option_critic import actor_loss as actor_loss_fn
+from agents.option_critic_utils import critic_loss as critic_loss_fn
+from agents.option_critic_utils import actor_loss as actor_loss_fn
+from agents.option_critic_utils import to_tensor
 
 from utils.experience_replay import ReplayBuffer
-from agents.option_critic_utils import to_tensor
 from utils.logger import Logger
 
 import time
@@ -143,8 +143,7 @@ def run(args):
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
     option_critic = agents[args.agent](
-        in_features=env.observation_space.shape[0] + 1,
-        num_actions=env.action_space.n,
+        env=env,
         num_options=args.num_options,
         temperature=args.temp,
         eps_start=args.epsilon_start,
@@ -152,6 +151,7 @@ def run(args):
         eps_decay=args.epsilon_decay,
         eps_test=args.optimal_eps,
         device=device,
+        deliberation_cost=True,
     )
     # Create a prime network for more stable Q values
     option_critic_prime = deepcopy(option_critic)
@@ -214,6 +214,16 @@ def run(args):
             else:
                 curr_op_len += 1
                 next_obs = np.append(next_obs, curr_op_len)
+            print(
+                "Option",
+                current_option,
+                "action",
+                action,
+                "Reward",
+                reward,
+                "curr_op_len",
+                curr_op_len,
+            )
 
             buffer.push(obs, current_option, reward, next_obs, done)
 

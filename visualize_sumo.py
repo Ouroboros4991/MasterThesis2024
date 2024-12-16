@@ -27,7 +27,7 @@ def visualize():
         use_gui=True,
         begin_time=start_time,
         num_seconds=duration,
-        delta_time=7,
+        # delta_time=7,
     )
     agent = default_4arm.FourArmIntersection(env.action_space)
     # agent = stable_baselines3.PPO.load("./models/xj9bh2nc/model.zip")

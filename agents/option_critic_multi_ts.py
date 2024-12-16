@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical, Bernoulli
+from itertools import permutations
 
 from math import exp
 import numpy as np
@@ -10,7 +11,11 @@ import numpy as np
 from agents.option_critic_utils import to_tensor
 
 
-class OptionCriticFeatures(nn.Module):
+class OptionCriticMultiTrafficLights(nn.Module):
+    """This option critic class is used together with the custom sumo environment
+    as redefines the action space so that one agent can manage all traffic lights
+    """
+
     def __init__(
         self,
         env,
@@ -22,15 +27,23 @@ class OptionCriticFeatures(nn.Module):
         eps_test=0.05,
         device="cpu",
         testing=False,
-        deliberation_cost=False,
     ):
 
-        super(OptionCriticFeatures, self).__init__()
+        super(OptionCriticMultiTrafficLights, self).__init__()
 
         self.in_features = env.observation_space.shape[0]
-        if deliberation_cost:
-            self.in_features += 1
-        self.num_actions = env.action_space.n
+        # Update action space based on the number of traffic lights
+        # This is done by getting all possible permutations of the action space and the number of traffic lights
+        # The action space contains the amount of possible configurations in 1 traffic light
+        # The end result is a list of all possible configurations across the traffic lights
+        self.traffic_lights = env.ts_ids
+        self.action_space = [
+            config
+            for config in permutations(
+                range(env.action_space.n), len(self.traffic_lights)
+            )
+        ]
+        self.num_actions = len(self.action_space)
         self.num_options = num_options
         self.device = device
         self.testing = testing
@@ -83,7 +96,13 @@ class OptionCriticFeatures(nn.Module):
         logp = action_dist.log_prob(action)
         entropy = action_dist.entropy()
 
-        return action.item(), logp, entropy
+        # Convert the single action to the correct mapping of configs per traffic light
+        action_dict = {}
+        for index, a in enumerate(self.action_space[action.item()]):
+            traffic_light = self.traffic_lights[index]
+            action_dict[traffic_light] = a
+
+        return action_dict, logp, entropy
 
     def greedy_option(self, state):
         Q = self.get_Q(state)
