@@ -14,7 +14,8 @@ from configs import ROUTE_SETTINGS
 
 
 def visualize():
-    settings = ROUTE_SETTINGS["custom-2way-single-intersection"]
+    # settings = ROUTE_SETTINGS["custom-2way-single-intersection"]
+    settings = ROUTE_SETTINGS["cologne3"]
     route_file = settings["path"]
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
@@ -26,26 +27,26 @@ def visualize():
         use_gui=True,
         begin_time=start_time,
         num_seconds=duration,
-        delta_time=12,
+        delta_time=7,
     )
-    #  agent = default_4arm.FourArmIntersection(env.action_space)
+    agent = default_4arm.FourArmIntersection(env.action_space)
     # agent = stable_baselines3.PPO.load("./models/xj9bh2nc/model.zip")
-    agent = option_critic.OptionCriticFeatures(
-        in_features=env.observation_space.shape[0],
-        num_actions=env.action_space.n,
-        num_options=2,
-        temperature=0.1,
-        eps_start=0.9,
-        eps_min=0.1,
-        eps_decay=0.999,
-        eps_test=0.05,
-        device="cpu",
-    )
-    agent.load_state_dict(
-        torch.load(
-            "./models/option_critic_2_options_custom-2way-single-intersection.csv_500000_steps"
-        )["model_params"]
-    )
+    # agent = option_critic.OptionCriticFeatures(
+    #     in_features=env.observation_space.shape[0],
+    #     num_actions=env.action_space.n,
+    #     num_options=2,
+    #     temperature=0.1,
+    #     eps_start=0.9,
+    #     eps_min=0.1,
+    #     eps_decay=0.999,
+    #     eps_test=0.05,
+    #     device="cpu",
+    # )
+    # agent.load_state_dict(
+    #     torch.load(
+    #         "./models/option_critic_2_options_custom-2way-single-intersection.csv_500000_steps"
+    #     )["model_params"]
+    # )
     obs, _ = env.reset()
     terminate = False
     option_termination = True

@@ -37,7 +37,7 @@ def run_episode(env, agent):
     np.random.seed(42)
     torch.manual_seed(42)
     results = []
-
+    curr_op_len = 1
     obs, _ = env.reset()
 
     cumulative_reward = 0.0
@@ -54,6 +54,7 @@ def run_episode(env, agent):
     except Exception as e:
         greedy_option = 0
     while not terminate:
+        obs = np.append(obs, curr_op_len)
         if option_termination:
             current_option = greedy_option
         try:
@@ -75,6 +76,11 @@ def run_episode(env, agent):
             ].tolist()[0]
         except Exception as e:
             pass
+
+        if option_termination:
+            curr_op_len = 1
+        else:
+            curr_op_len += 1
 
         cumulative_reward += rewards
         mean_waiting_time = info["system_mean_waiting_time"]
@@ -167,7 +173,7 @@ if __name__ == "__main__":
     #     "./models/ppo_custom-2way-single-intersection.zip"
     # )
     agent = option_critic.OptionCriticFeatures(
-        in_features=env.observation_space.shape[0],
+        in_features=env.observation_space.shape[0] + 1,
         num_actions=env.action_space.n,
         num_options=2,
         temperature=0.1,
@@ -179,43 +185,10 @@ if __name__ == "__main__":
     )
     agent.load_state_dict(
         torch.load(
-            "./models/option_critic_2_options_custom-2way-single-intersection_hd_reg_sum_500000_steps"
+            "./models/option_critic_2_options_with_deliberation_custom-2way-single-intersection_500000_steps"
         )["model_params"]
     )
-    # agent = option_critic_forced.OptionCriticForced(
-    #     in_features=env.observation_space.shape[0],
-    #     num_actions=env.action_space.n,
-    #     num_options=2,
-    #     temperature=0.1,
-    #     eps_start=0.9,
-    #     eps_min=0.1,
-    #     eps_decay=0.999,
-    #     eps_test=0.05,
-    #     device="cpu",
-    # )
-    # agent.load_state_dict(
-    #     torch.load(
-    #         "./models/option_critic_forced_2_options_custom-2way-single-intersection_500000_steps"
-    #     )["model_params"]
-    # )
 
-    # agent = option_critic.OptionCriticFeatures(
-    #     in_features=env.observation_space.shape[0],
-    #     num_actions=env.action_space.n,
-    #     num_options=2,
-    #     temperature=0.1,
-    #     eps_start=0.9,
-    #     eps_min=0.1,
-    #     eps_decay=0.999,
-    #     eps_test=0.05,
-    #     device="cpu",
-    # )
-    # agent.load_state_dict(
-    #     torch.load(
-    #         "./models/option_critic_2_options_custom-2way-single-intersection_hd_reg_500000_steps"
-    #     )["model_params"]
-    # )
-
-    prefix = "oc_hd_sum_steps"
+    prefix = "oc_cost_500k_steps"
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)
