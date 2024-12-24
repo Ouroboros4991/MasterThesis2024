@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import operator
 
-from sumo_rl import SumoEnvironment
 import gymnasium as gym
 import torch
 
@@ -10,26 +9,21 @@ import stable_baselines3
 from agents import default_4arm
 from agents import option_critic
 from agents.option_critic_utils import to_tensor
-from sumo_configs import ROUTE_SETTINGS
+
+from gym_cityflow.envs import Cityflow
+
+gym.register(id="cityflow-v0", entry_point="gym_cityflow.envs:Cityflow")
 
 
 def visualize():
-    settings = ROUTE_SETTINGS["custom-2way-single-intersection"]
-    route_file = settings["path"]
-    start_time = settings["begin_time"]
-    end_time = settings["end_time"]
-    duration = end_time - start_time
-    env = SumoEnvironment(
-        net_file=route_file.format(type="net"),
-        route_file=route_file.format(type="rou"),
-        single_agent=True,
-        use_gui=True,
-        begin_time=start_time,
-        num_seconds=duration,
-        delta_time=12,
+    env = gym.make(
+        id="cityflow-v0",
+        configPath="city_flow_envs/real_1x1/config.json",
+        episodeSteps=3600,
     )
-    #  agent = default_4arm.FourArmIntersection(env.action_space)
-    # agent = stable_baselines3.PPO.load("./models/xj9bh2nc/model.zip")
+
+    print(env.observation_space)
+    print(env.action_space)
     agent = option_critic.OptionCriticFeatures(
         in_features=env.observation_space.shape[0],
         num_actions=env.action_space.n,

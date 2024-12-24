@@ -13,7 +13,7 @@ from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3.common.callbacks import CheckpointCallback
 import argparse
 
-from configs import ROUTE_SETTINGS
+from sumo_configs import ROUTE_SETTINGS
 
 TRAFFIC = "custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]

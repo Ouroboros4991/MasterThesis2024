@@ -11,7 +11,7 @@ from agents import default_4arm
 from agents import option_critic
 from agents import option_critic_forced
 from agents.option_critic_utils import to_tensor
-from configs import ROUTE_SETTINGS
+from sumo_configs import ROUTE_SETTINGS
 
 TRAFFIC = "custom-2way-single-intersection"
 # TRAFFIC = "custom-single-intersection"

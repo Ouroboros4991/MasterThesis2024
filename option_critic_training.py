@@ -19,7 +19,7 @@ import time
 
 from sumo_rl import SumoEnvironment
 
-from configs import ROUTE_SETTINGS
+from sumo_configs import ROUTE_SETTINGS
 
 TRAFFIC = "custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
