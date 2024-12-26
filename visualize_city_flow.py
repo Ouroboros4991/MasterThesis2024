@@ -10,61 +10,67 @@ from agents import default_4arm
 from agents import option_critic
 from agents.option_critic_utils import to_tensor
 
-from gym_cityflow.envs import Cityflow
+from gym_cityflow.envs import CityflowGym
 
-gym.register(id="cityflow-v0", entry_point="gym_cityflow.envs:Cityflow")
+gym.register(id="cityflow-v0", entry_point="gym_cityflow.envs:CityflowGym")
 
+from city_flow_nets.real_1x1 import config
 
 def visualize():
     env = gym.make(
         id="cityflow-v0",
-        configPath="city_flow_envs/real_1x1/config.json",
-        episodeSteps=3600,
-    )
-
-    print(env.observation_space)
-    print(env.action_space)
-    agent = option_critic.OptionCriticFeatures(
-        in_features=env.observation_space.shape[0],
-        num_actions=env.action_space.n,
-        num_options=2,
-        temperature=0.1,
-        eps_start=0.9,
-        eps_min=0.1,
-        eps_decay=0.999,
-        eps_test=0.05,
-        device="cpu",
-    )
-    agent.load_state_dict(
-        torch.load(
-            "./models/option_critic_2_options_custom-2way-single-intersection.csv_500000_steps"
-        )["model_params"]
+        config_dict=config.CONFIG,
+        episode_steps=3600,  # TODO: remove episodeSteps and add it to the configDict
     )
     obs, _ = env.reset()
     terminate = False
-    option_termination = True
-    try:
-        state = agent.get_state(to_tensor(obs))
-        greedy_option = agent.greedy_option(state)
-    except Exception as e:
-        greedy_option = 0
     while not terminate:
-        if option_termination:
-            current_option = greedy_option
-
-        try:
-            action, _states = agent.predict(obs)
-        except AttributeError as e:
-            state = agent.get_state(to_tensor(obs))
-            action, logp, entropy = agent.get_action(state, current_option)
+        action = env.action_space.sample()
+        action = np.array([action])
         obs, rewards, dones, truncated, info = env.step(action)
         terminate = dones | truncated
-        try:
-            option_termination, greedy_option = agent.predict_option_termination(
-                state, current_option
-            )
-        except Exception as e:
-            pass
+
+    # agent = option_critic.OptionCriticFeatures(
+    #     in_features=env.observation_space.shape[0],
+    #     num_actions=env.action_space.shape[0],
+    #     num_options=2,
+    #     temperature=0.1,
+    #     eps_start=0.9,
+    #     eps_min=0.1,
+    #     eps_decay=0.999,
+    #     eps_test=0.05,
+    #     device="cpu",
+    # )
+    # agent.load_state_dict(
+    #     torch.load(
+    #         "./models/option_critic_2_options_custom-2way-single-intersection.csv_500000_steps"
+    #     )["model_params"]
+    # )
+    # obs, _ = env.reset()
+    # terminate = False
+    # option_termination = True
+    # try:
+    #     state = agent.get_state(to_tensor(obs))
+    #     greedy_option = agent.greedy_option(state)
+    # except Exception as e:
+    #     greedy_option = 0
+    # while not terminate:
+    #     if option_termination:
+    #         current_option = greedy_option
+
+    #     try:
+    #         action, _states = agent.predict(obs)
+    #     except AttributeError as e:
+    #         state = agent.get_state(to_tensor(obs))
+    #         action, logp, entropy = agent.get_action(state, current_option)
+        # obs, rewards, dones, truncated, info = env.step(action)
+        # terminate = dones | truncated
+    #     try:
+    #         option_termination, greedy_option = agent.predict_option_termination(
+    #             state, current_option
+    #         )
+    #     except Exception as e:
+    #         pass
 
 
 if __name__ == "__main__":
