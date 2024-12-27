@@ -1,1 +1,0 @@
-These net files originate from the original SUMO-RL github repo: https://github.com/LucasAlegre/sumo-rl
