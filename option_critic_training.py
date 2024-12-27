@@ -8,8 +8,8 @@ from copy import deepcopy
 from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
 
-from agents.option_critic import critic_loss as critic_loss_fn
-from agents.option_critic import actor_loss as actor_loss_fn
+from agents.option_critic_utils import critic_loss as critic_loss_fn
+from agents.option_critic_utils import actor_loss as actor_loss_fn
 
 from utils.experience_replay import ReplayBuffer
 from agents.option_critic_utils import to_tensor

@@ -169,13 +169,13 @@ if __name__ == "__main__":
     # agent = option_critic.OptionCriticFeatures(
     #     in_features=env.observation_space.shape[0],
     #     num_actions=env.action_space.n,
-    #     num_options=2,
-    #     temperature=0.1,
-    #     eps_start=0.9,
-    #     eps_min=0.1,
-    #     eps_decay=0.999,
-    #     eps_test=0.05,
-    #     device="cpu",
+        # num_options=2,
+        # temperature=0.1,
+        # eps_start=0.9,
+        # eps_min=0.1,
+        # eps_decay=0.999,
+        # eps_test=0.05,
+        # device="cpu",
     # )
     # agent.load_state_dict(
     #     torch.load(

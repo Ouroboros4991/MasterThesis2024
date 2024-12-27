@@ -36,7 +36,8 @@ class CityflowGymDiscrete(CityflowGym):
         """
         # As we only have 1 intersection,
         # we can directly set the traffic light phases
-        self.eng.set_tl_phase(self.main_intersection, action)
+        intersection = self.intersections[self.main_intersection]
+        intersection.set_phase(action)
 
     def _get_observation(self):
         main_intersection = list(self.intersections.keys())[0]

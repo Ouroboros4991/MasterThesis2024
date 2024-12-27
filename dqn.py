@@ -15,19 +15,16 @@ import argparse
 from gym_cityflow.envs import CityflowGym
 from gym_cityflow.envs import CityflowGymDiscrete
 
-gym.register(
-    id="cityflow-discrete", entry_point="gym_cityflow.envs:CityflowGymDiscrete"
-)
 
-from city_flow_nets.real_1x1 import config
+import city_flow_configs as config
 
 
 def main():
     experiment_name = f"dqn_real_1x1"
     env = gym.make(
         id="cityflow-discrete",
-        config_dict=config.CONFIG,
-        episode_steps=3600,  # TODO: remove episodeSteps and add it to the configDict
+        config_dict=config.REAL_1X1_CONFIG,
+        episode_steps=3600,  # TODO: remove episodeSteps and add it to the configDict,
     )
     print("Environment created")
 

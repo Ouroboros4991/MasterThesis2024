@@ -23,11 +23,10 @@ import argparse
 from gym_cityflow.envs import CityflowGym
 from gym_cityflow.envs import CityflowGymDiscrete
 
-gym.register(
-    id="cityflow-discrete", entry_point="gym_cityflow.envs:CityflowGymDiscrete"
-)
 
 from city_flow_nets.real_1x1 import config
+
+import city_flow_configs
 
 
 def main():
@@ -54,6 +53,7 @@ def main():
         episode_steps=3600,  # TODO: remove episodeSteps and add it to the configDict
     )
     print("Environment created")
+    env.eng.set_save_replay(False)
 
     # env = ss.pettingzoo_env_to_vec_env_v1(env)
     # env = ss.concat_vec_envs_v1(env, 2, num_cpus=1, base_class="stable_baselines3")
