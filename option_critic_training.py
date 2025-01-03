@@ -13,7 +13,7 @@ from agents.option_critic import actor_loss as actor_loss_fn
 
 from utils.experience_replay import ReplayBuffer
 from agents.option_critic_utils import to_tensor
-from utils.logger import Logger
+from utils.sb3_logger import SB3Logger as Logger
 
 import time
 
@@ -126,7 +126,6 @@ def run(args):
     experiment_name = f"{args.agent}_{args.num_options}_options_{TRAFFIC}"
     if args.hd_reg:
         experiment_name += "_hd_reg"
-
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
     env = SumoEnvironment(
         net_file=route_file.format(type="net"),
@@ -162,8 +161,9 @@ def run(args):
 
     buffer = ReplayBuffer(capacity=args.max_history, seed=args.seed)
     logger = Logger(
-        logdir=args.logdir,
-        run_name=f"{experiment_name}-{time.ctime()}",
+        verbose=3,
+        tensorboard_log=args.logdir,
+        tb_log_name=f"{experiment_name}-{time.ctime()}",
     )
 
     steps = 0
@@ -178,9 +178,10 @@ def run(args):
         greedy_option = option_critic.greedy_option(state)
         current_option = 0
         done = False
-        ep_steps = 0
+        episode = 0
         option_termination = True
         curr_op_len = 0
+        logger.start_episode(steps)
         while not done:
             epsilon = option_critic.epsilon
 
@@ -235,22 +236,18 @@ def run(args):
             )
             # update global steps etc
             steps += 1
-            ep_steps += 1
             curr_op_len += 1
             obs = next_obs
             cumulative_rewards += reward
             # average_cumulative_rewards *= 0.95
             # average_cumulative_rewards += 0.05 * cumulative_rewards
-
-            logger.log_data(steps, actor_loss, critic_loss, entropy.item(), epsilon)
         logger.log_episode(
-            steps,
-            cumulative_rewards,
-            # average_cumulative_rewards,
-            option_lengths,
-            ep_steps,
-            epsilon,
+            num_timesteps=steps,
+            iteration=episode,
+            reward=cumulative_rewards,
         )
+        episode += 1
+
         if steps % 500000 == 0:
             torch.save(
                 {"model_params": option_critic.state_dict()},
