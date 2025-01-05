@@ -160,6 +160,7 @@ if __name__ == "__main__":
         num_seconds=duration,
         add_per_agent_info=True,
         add_system_info=True,
+        reward_fn='pressure',
     )
 
     # agent = default_4arm.FourArmIntersection(env.action_space)

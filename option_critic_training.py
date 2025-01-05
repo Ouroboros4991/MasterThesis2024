@@ -8,11 +8,13 @@ from copy import deepcopy
 from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
 
-from agents.option_critic import critic_loss as critic_loss_fn
-from agents.option_critic import actor_loss as actor_loss_fn
+from agents.option_critic_utils import to_tensor
+from agents.option_critic_utils import critic_loss as critic_loss_fn
+from agents.option_critic_utils import actor_loss as actor_loss_fn
+
+from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 from utils.experience_replay import ReplayBuffer
-from agents.option_critic_utils import to_tensor
 from utils.sb3_logger import SB3Logger as Logger
 
 import time
@@ -127,15 +129,12 @@ def run(args):
     if args.hd_reg:
         experiment_name += "_hd_reg"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = SumoEnvironment(
+    env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
-        # out_csv_name=f"./outputs/oc/{experiment_name}.csv",
-        single_agent=True,
+        # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
-        add_per_agent_info=True,
-        add_system_info=True,
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")

@@ -139,6 +139,7 @@ def run(args):
         num_seconds=duration,
         add_per_agent_info=True,
         add_system_info=True,
+        reward_fn='pressure',
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")

@@ -17,5 +17,9 @@ class FourArmIntersection:
             int: The action to take.
         """
         action = self.current_phase
-        self.current_phase = (self.current_phase + 1) % self.number_phases
+        currently_green = observation[0:self.number_phases]
+        # only update the phase if we're in a green phase
+        # This to avoid skipping phases because of the yellow phase
+        if any(currently_green):
+            self.current_phase = (self.current_phase + 1) % self.number_phases
         return action, None

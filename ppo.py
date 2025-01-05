@@ -13,9 +13,11 @@ from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3.common.callbacks import CheckpointCallback
 import argparse
 
+from sumo_rl_environment.custom_env import CustomSumoEnvironment
+
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "cologne3" #"custom-2way-single-intersection"
+TRAFFIC = "cologne1" #"custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 N_EPISODES = 100
 
@@ -27,15 +29,12 @@ def main():
     duration = end_time - start_time
     experiment_name = f"ppo_{TRAFFIC}"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = SumoEnvironment(
+    env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
-        # out_csv_name=f"./outputs/ppo/{experiment_name}.csv",
-        single_agent=True,
+        # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
-        add_per_agent_info=True,
-        add_system_info=True,
     )
     print("Environment created")
 
