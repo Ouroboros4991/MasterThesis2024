@@ -20,12 +20,10 @@ from utils.sb3_logger import SB3Logger as Logger
 
 import time
 
-from sumo_rl import SumoEnvironment
-
 from configs import ROUTE_SETTINGS
 
-# TRAFFIC = "custom-2way-single-intersection"
-TRAFFIC = "cologne1"
+TRAFFIC = "custom-2way-single-intersection"
+# TRAFFIC = "cologne1"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 agents = {
