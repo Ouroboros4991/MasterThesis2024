@@ -17,7 +17,7 @@ from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "cologne1" #"custom-2way-single-intersection"
+TRAFFIC = "custom-2way-single-intersection-low" #"custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 N_EPISODES = 100
 
@@ -27,7 +27,7 @@ def main():
     start_time = SETTINGS["begin_time"]
     end_time = SETTINGS["end_time"]
     duration = end_time - start_time
-    experiment_name = f"ppo_1mil_{TRAFFIC}"
+    experiment_name = f"a2c_{TRAFFIC}"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
     env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
@@ -46,30 +46,21 @@ def main():
 
     env.reset()
 
-    agent = stable_baselines3.PPO(
+    agent = stable_baselines3.A2C(
         "MlpPolicy",
         env,
         verbose=3,
         gamma=0.95,
-        n_steps=256,
-        ent_coef=0.0905168,
-        learning_rate=0.00062211,
-        vf_coef=0.042202,
-        max_grad_norm=0.9,
-        gae_lambda=0.99,
-        n_epochs=5,
-        clip_range=0.3,
-        batch_size=256,
         tensorboard_log=f"runs/{experiment_name}",
     )
 
     checkpoint_callback = CheckpointCallback(
-        save_freq=1000000,
+        save_freq=100000,
         save_path="./models/",
         name_prefix=experiment_name,
     )
 
-    agent.learn(total_timesteps=1000000)
+    agent.learn(total_timesteps=100000)
     agent.save(f"./models/{experiment_name}")
 
 

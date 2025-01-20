@@ -7,6 +7,7 @@ from copy import deepcopy
 
 from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
+from agents.option_critic_nn import OptionCriticNeuralNetwork
 
 from agents.option_critic_utils import to_tensor
 from agents.option_critic_utils import critic_loss as critic_loss_fn
@@ -23,12 +24,14 @@ from sumo_rl import SumoEnvironment
 
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "custom-2way-single-intersection"
+# TRAFFIC = "custom-2way-single-intersection"
+TRAFFIC = "cologne1"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 agents = {
     "option_critic": OptionCriticFeatures,
     "option_critic_forced": OptionCriticForced,
+    "option_critic_nn": OptionCriticNeuralNetwork,
 }
 
 parser = argparse.ArgumentParser(description="Option Critic PyTorch")
@@ -83,7 +86,7 @@ parser.add_argument(
 parser.add_argument(
     "--entropy-reg",
     type=float,
-    default=0.01,
+    default=0.1,
     help=("Regularization to increase policy entropy."),
 )
 parser.add_argument(
@@ -194,7 +197,6 @@ def run(args):
                 curr_op_len = 0
 
             action, logp, entropy = option_critic.get_action(state, current_option)
-
             next_obs, reward, done, truncated, info = env.step(action)
             done = done | truncated
             buffer.push(obs, current_option, reward, next_obs, done)

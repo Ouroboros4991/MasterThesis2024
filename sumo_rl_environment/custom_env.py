@@ -40,7 +40,7 @@ class CustomObservationFunction(ObservationFunction):
         )
 
 class CustomSumoEnvironment(SumoEnvironment):
-    def __init__(self, net_file, route_file, begin_time, num_seconds):
+    def __init__(self, net_file, route_file, begin_time, num_seconds, use_gui=False, out_csv_name=None):
         super().__init__(
             net_file=net_file,
             route_file=route_file,
@@ -51,5 +51,8 @@ class CustomSumoEnvironment(SumoEnvironment):
             add_system_info=True,
             reward_fn='pressure',
             observation_class=CustomObservationFunction,
+            use_gui=use_gui,
+            additional_sumo_cmd='--tripinfo-output',
+            # out_csv_name=out_csv_name
         )
         
