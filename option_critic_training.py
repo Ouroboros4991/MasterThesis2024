@@ -84,7 +84,7 @@ parser.add_argument(
 parser.add_argument(
     "--entropy-reg",
     type=float,
-    default=0.1,
+    default=0.01,
     help=("Regularization to increase policy entropy."),
 )
 parser.add_argument(
@@ -247,11 +247,10 @@ def run(args):
         )
         episode += 1
 
-        if steps % 500000 == 0:
-            torch.save(
-                {"model_params": option_critic.state_dict()},
-                f"models/{experiment_name}_{steps}_steps",
-            )
+    torch.save(
+        {"model_params": option_critic.state_dict()},
+        f"models/{experiment_name}_{steps}_steps",
+    )
 
 
 if __name__ == "__main__":

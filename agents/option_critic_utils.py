@@ -111,6 +111,13 @@ def actor_loss(
     )
 
     # The termination loss
+    # Starts from the termination probability
+    # Increases when the Q value of the option is close to the max Q value
+    # + the termination reg
+    # So the termination reg compensates when the Q value is much lower
+    # than the max Q value
+    # The third term causes the loss to only take into account 
+    # the termination loss when the episode is not done
     termination_loss = (
         option_term_prob
         * (Q[option].detach() - Q.max(dim=-1)[0].detach() + args.termination_reg)

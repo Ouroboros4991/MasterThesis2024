@@ -20,7 +20,7 @@ from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "custom-2way-single-intersection2"  # "custom-2way-single-intersection"
+TRAFFIC = "custom-2way-single-intersection"  # "custom-2way-single-intersection"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 N_EPISODES = 100
 
@@ -55,12 +55,6 @@ def main():
         verbose=3,
         gamma=0.95,
         tensorboard_log=f"runs/{experiment_name}",
-    )
-
-    checkpoint_callback = CheckpointCallback(
-        save_freq=100000,
-        save_path="./models/",
-        name_prefix=experiment_name,
     )
 
     agent.learn(total_timesteps=100000)

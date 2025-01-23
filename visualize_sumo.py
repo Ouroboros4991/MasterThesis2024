@@ -8,13 +8,17 @@ import torch
 import stable_baselines3
 from agents import default_4arm
 from agents import option_critic
+from agents import option_critic_nn
 from agents.option_critic_utils import to_tensor
 from configs import ROUTE_SETTINGS
 from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 
 
-TRAFFIC = "cologne1"
+# TRAFFIC = "cologne1"
+# TRAFFIC = "custom-2way-single-intersection2"
+TRAFFIC = "hangzhou_1x1_bc-tyc_18041607_1h"
+
 
 def visualize():
     # settings = ROUTE_SETTINGS["custom-2way-single-intersection"]
@@ -48,6 +52,22 @@ def visualize():
     # agent.load_state_dict(
     #     torch.load(
     #         "./models/option_critic_2_options_custom-2way-single-intersection.csv_500000_steps"
+    #     )["model_params"]
+    # )
+    # agent = option_critic_nn.OptionCriticNeuralNetwork(
+    #     in_features=env.observation_space.shape[0],
+    #     num_actions=env.action_space.n,
+    #     num_options=2,
+    #     temperature=0.1,
+    #     eps_start=0.9,
+    #     eps_min=0.1,
+    #     eps_decay=0.999,
+    #     eps_test=0.05,
+    #     device="cpu",
+    # )
+    # agent.load_state_dict(
+    #     torch.load(
+    #         "./models/option_critic_nn_2_options_custom-2way-single-intersection2_150000_steps"
     #     )["model_params"]
     # )
     obs, _ = env.reset()

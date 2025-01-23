@@ -214,15 +214,21 @@ if __name__ == "__main__":
         begin_time=start_time,
         num_seconds=duration,
     )
-    # prefix = "fixed_period_30_steps"
-    # green_duration = 30
+    # prefix = "fixed_period_15_steps"
+    # green_duration = 15
     # agent = default_4arm.FourArmIntersection(env.action_space, green_duration//env.delta_time)
 
     # prefix = "a2c_low"
     # agent = stable_baselines3.PPO.load(
     #     "./models/a2c_custom-2way-single-intersection-low.zip"
     # )
+    
+    # prefix = "a2c"
+    # agent = stable_baselines3.PPO.load(
+    #     "./models/a2c_custom-2way-single-intersection2.zip"
+    # )
 
+    
     # prefix = "a2c_high"
     # agent = stable_baselines3.PPO.load(
     #     "./models/a2c_custom-2way-single-intersection-high.zip"
@@ -255,7 +261,24 @@ if __name__ == "__main__":
     #     )["model_params"]
     # )
 
-    prefix = f"option_critic_nn"
+    # prefix = f"option_critic_nn"
+    # agent = option_critic_nn.OptionCriticNeuralNetwork(
+    #     in_features=env.observation_space.shape[0],
+    #     num_actions=env.action_space.n,
+    #     num_options=2,
+    #     temperature=0.1,
+    #     eps_start=0.9,
+    #     eps_min=0.1,
+    #     eps_decay=0.999,
+    #     eps_test=0.05,
+    #     device="cpu",
+    # )
+    # agent.load_state_dict(
+    #     torch.load(
+    #         "./models/option_critic_nn_2_options_custom-2way-single-intersection_150000_steps"
+    #     )["model_params"]
+    # )
+    prefix = f"option_critic_nn_250k"
     agent = option_critic_nn.OptionCriticNeuralNetwork(
         in_features=env.observation_space.shape[0],
         num_actions=env.action_space.n,
@@ -269,7 +292,7 @@ if __name__ == "__main__":
     )
     agent.load_state_dict(
         torch.load(
-            "./models/option_critic_nn_2_options_custom-2way-single-intersection_500000_steps"
+            "./models/option_critic_nn_2_options_custom-2way-single-intersection_250800_steps"
         )["model_params"]
     )
 

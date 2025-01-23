@@ -7,7 +7,7 @@ ROUTE_SETTINGS = {
     "custom-2way-single-intersection": {
         "path": "sumo_rl_nets/custom-2way-single-intersection/single-intersection.{type}.xml",
         "begin_time": 0,
-        "end_time": 5000,
+        "end_time": 6000,
     },
     "custom-2way-single-intersection2": {
         "path": "sumo_rl_nets/custom-2way-single-intersection2/single-intersection.{type}.xml",
@@ -48,5 +48,10 @@ ROUTE_SETTINGS = {
         "path": "sumo_rl_nets/RESCO/ingolstadt7/ingolstadt7.{type}.xml",
         "begin_time": 57600,
         "end_time": 61200,
+    },
+    "hangzhou_1x1_bc-tyc_18041607_1h": {
+        "path": "sumo_rl_nets/hangzhou_1x1_bc-tyc_18041607_1h/hangzhou_1x1_bc-tyc_18041607_1h.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,
     },
 }
