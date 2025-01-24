@@ -15,10 +15,8 @@ from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 
 
-# TRAFFIC = "cologne1"
+TRAFFIC = "cologne3"
 # TRAFFIC = "custom-2way-single-intersection2"
-TRAFFIC = "hangzhou_1x1_bc-tyc_18041607_1h"
-
 
 def visualize():
     # settings = ROUTE_SETTINGS["custom-2way-single-intersection"]
@@ -34,9 +32,13 @@ def visualize():
         begin_time=start_time,
         num_seconds=duration,
     )
+    obs = env.reset()
+
     
+    print("Action_space", env.action_space)
+    print("Observation_space", env.observation_space)
     green_duration = 15
-    agent = default_4arm.FourArmIntersection(env.action_space, green_duration//env.delta_time)
+    agent = default_4arm.FourArmIntersection(env, green_duration//env.delta_time)
     # agent = stable_baselines3.PPO.load(f"./models/ppo_{TRAFFIC}.zip")
     # agent = option_critic.OptionCriticFeatures(
     #     in_features=env.observation_space.shape[0],
@@ -70,7 +72,6 @@ def visualize():
     #         "./models/option_critic_nn_2_options_custom-2way-single-intersection2_150000_steps"
     #     )["model_params"]
     # )
-    obs, _ = env.reset()
     terminate = False
     option_termination = True
     try:
@@ -87,8 +88,9 @@ def visualize():
         except AttributeError as e:
             state = agent.get_state(to_tensor(obs))
             action, logp, entropy = agent.get_action(state, current_option)
-        obs, rewards, dones, truncated, info = env.step(action)
-        terminate = dones | truncated
+        
+        obs, rewards, dones, info = env.step(action)
+        terminate = dones['__all__']
         try:
             option_termination, greedy_option = agent.predict_option_termination(
                 state, current_option

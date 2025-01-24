@@ -46,7 +46,7 @@ class CustomSumoEnvironment(SumoEnvironment):
             route_file=route_file,
             begin_time=begin_time,
             num_seconds=num_seconds,
-            single_agent=True,
+            single_agent=False,
             add_per_agent_info=True,
             add_system_info=True,
             reward_fn='pressure',
