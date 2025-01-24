@@ -7,17 +7,18 @@ from copy import deepcopy
 
 from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
+from agents.option_critic_nn import OptionCriticNeuralNetwork
 
-from agents.option_critic import critic_loss as critic_loss_fn
-from agents.option_critic import actor_loss as actor_loss_fn
+from agents.option_critic_utils import to_tensor
+from agents.option_critic_utils import critic_loss as critic_loss_fn
+from agents.option_critic_utils import actor_loss as actor_loss_fn
+
+from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 from utils.experience_replay import ReplayBuffer
-from agents.option_critic_utils import to_tensor
-from utils.logger import Logger
-
+from utils.sb3_logger import SB3Logger as Logger
 import time
 
-from sumo_rl import SumoEnvironment
 
 from configs import ROUTE_SETTINGS
 
@@ -27,6 +28,7 @@ SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 agents = {
     "option_critic": OptionCriticFeatures,
     "option_critic_forced": OptionCriticForced,
+    "option_critic_nn": OptionCriticNeuralNetwork,
 }
 
 parser = argparse.ArgumentParser(description="Option Critic PyTorch")
@@ -50,7 +52,7 @@ parser.add_argument("--epsilon-min", type=float, default=0.1, help="Minimum epsi
 parser.add_argument(
     "--epsilon-decay",
     type=float,
-    default=20000,
+    default=50000,
     help=("Number of steps to minimum epsilon."),
 )
 parser.add_argument(
@@ -130,15 +132,12 @@ def run(args):
         experiment_name += "_hd_reg"
 
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = SumoEnvironment(
+    env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
-        # out_csv_name=f"./outputs/oc/{experiment_name}.csv",
-        single_agent=True,
+        # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
-        add_per_agent_info=True,
-        add_system_info=True,
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
@@ -164,8 +163,9 @@ def run(args):
 
     buffer = ReplayBuffer(capacity=args.max_history, seed=args.seed)
     logger = Logger(
-        logdir=args.logdir,
-        run_name=f"{experiment_name}-{time.ctime()}",
+        verbose=3,
+        tensorboard_log=args.logdir,
+        tb_log_name=f"{experiment_name}-{time.ctime()}",
     )
 
     steps = 0
@@ -179,10 +179,10 @@ def run(args):
         current_option = 0
         done = False
         option_termination = False
-        ep_steps = 0
+        episode = 0
         curr_op_len = 1
         obs = np.append(obs, curr_op_len)
-
+        logger.start_episode(steps)
         while not done:
             epsilon = option_critic.epsilon
             if option_termination:
@@ -207,7 +207,7 @@ def run(args):
                 )
             )
             if option_termination:
-                cost = 1  # TODO make variable
+                cost = 1000  # TODO make variable
                 reward -= cost * (1 / curr_op_len)
                 curr_op_len = 1
                 next_obs = np.append(next_obs, curr_op_len)
@@ -249,25 +249,20 @@ def run(args):
 
             # update global steps etc
             steps += 1
-            ep_steps += 1
             obs = next_obs
             cumulative_rewards += reward
             # average_cumulative_rewards *= 0.95
             # average_cumulative_rewards += 0.05 * cumulative_rewards
-
-            logger.log_data(steps, actor_loss, critic_loss, entropy.item(), epsilon)
         logger.log_episode(
-            steps,
-            cumulative_rewards,
-            # average_cumulative_rewards,
-            ep_steps,
-            epsilon,
+            num_timesteps=steps,
+            iteration=episode,
+            reward=cumulative_rewards,
         )
-        if steps % 500000 == 0:
-            torch.save(
-                {"model_params": option_critic.state_dict()},
-                f"models/{experiment_name}_{steps}_steps",
-            )
+        episode += 1
+    torch.save(
+        {"model_params": option_critic.state_dict()},
+        f"models/{experiment_name}_{steps}_steps",
+    )
 
 
 if __name__ == "__main__":

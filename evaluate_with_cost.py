@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import operator
 
-from sumo_rl import SumoEnvironment
+from sumo_rl_environment.custom_env import CustomSumoEnvironment
 import gymnasium as gym
 import torch
 
@@ -10,6 +10,8 @@ import stable_baselines3
 from agents import default_4arm
 from agents import option_critic
 from agents import option_critic_forced
+from agents import option_critic_nn
+
 from agents.option_critic_utils import to_tensor
 from configs import ROUTE_SETTINGS
 
@@ -88,6 +90,10 @@ def run_episode(env, agent):
         lane_density = np.sum(
             [ts.get_lanes_density() for ts in env.traffic_signals.values()]
         )
+        queue_length = np.sum(
+            [ts.get_total_queued() for ts in env.traffic_signals.values()]
+        )
+
         average_cumulative_reward *= 0.95
         average_cumulative_reward += 0.05 * cumulative_reward
 
@@ -106,6 +112,7 @@ def run_episode(env, agent):
                 "waiting_time": mean_waiting_time,
                 "speed": mean_speed,
                 "lane_density": lane_density,
+                "queue_length": queue_length,
             }
         )
     return results
@@ -128,6 +135,40 @@ def multiple_episodes(env, agent, prefix):
     for episode_number in range(n_episodes):
         print("Episode", episode_number)
         episode_results = run_episode(env, agent)
+        n_vehicles = float(
+            env.sumo.simulation.getParameter(
+                "", key="device.tripinfo.vehicleTripStatistics.count"
+            )
+        )
+        total_travel_time = float(
+            env.sumo.simulation.getParameter(
+                "", key="device.tripinfo.vehicleTripStatistics.totalTravelTime"
+            )
+        )
+        time_loss = float(
+            env.sumo.simulation.getParameter(
+                "", key="device.tripinfo.vehicleTripStatistics.timeLoss"
+            )
+        )
+        waiting_time = float(
+            env.sumo.simulation.getParameter(
+                "", key="device.tripinfo.vehicleTripStatistics.waitingTime"
+            )
+        )
+
+        collisions = float(
+            env.sumo.simulation.getParameter("", key="stats.safety.collisions")
+        )
+        emergency_stops = float(
+            env.sumo.simulation.getParameter("", key="stats.safety.emergencyStops")
+        )
+        emergency_braking = float(
+            env.sumo.simulation.getParameter("", key="stats.safety.emergencyBraking")
+        )
+
+        avg_travel_time = total_travel_time / n_vehicles
+        avg_time_loss = time_loss  # / n_vehicles
+        avg_waiting_time = waiting_time  # / n_vehicles
         results.append(
             {
                 "episode": episode_number,
@@ -136,13 +177,22 @@ def multiple_episodes(env, agent, prefix):
                     "average_cumulative_reward"
                 ],
                 # Get the average waiting time across the episodes
-                "mean_waiting_time": np.mean(
-                    [r["waiting_time"] for r in episode_results]
-                ),
-                "mean_speed": np.mean([r["speed"] for r in episode_results]),
+                # "mean_waiting_time": np.mean(
+                #     [r["waiting_time"] for r in episode_results]
+                # ),
+                # "mean_speed": np.mean([r["speed"] for r in episode_results]),
                 "mean_lane_density": np.mean(
                     [r["lane_density"] for r in episode_results]
                 ),
+                "mean_queue_length": np.mean(
+                    [r["queue_length"] for r in episode_results]
+                ),
+                "avg_travel_time": avg_travel_time,
+                "avg_time_loss": avg_time_loss,
+                "avg_waiting_time": avg_waiting_time,
+                "collisions": collisions,
+                "emergency_stops": emergency_stops,
+                "emergency_braking": emergency_braking,
             }
         )
     print("Writing multiple episodes to csv")
@@ -157,22 +207,36 @@ if __name__ == "__main__":
     start_time = SETTINGS["begin_time"]
     end_time = SETTINGS["end_time"]
     duration = end_time - start_time
-    env = SumoEnvironment(
+    env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
-        single_agent=True,
-        use_gui=False,
+        # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
-        add_per_agent_info=True,
-        add_system_info=True,
     )
 
     # agent = default_4arm.FourArmIntersection(env.action_space)
     # agent = stable_baselines3.PPO.load(
     #     "./models/ppo_custom-2way-single-intersection.zip"
     # )
-    agent = option_critic.OptionCriticFeatures(
+    # agent = option_critic.OptionCriticFeatures(
+    #     in_features=env.observation_space.shape[0] + 1,
+    #     num_actions=env.action_space.n,
+    #     num_options=2,
+    #     temperature=0.1,
+    #     eps_start=0.9,
+    #     eps_min=0.1,
+    #     eps_decay=0.999,
+    #     eps_test=0.05,
+    #     device="cpu",
+    # )
+    # agent.load_state_dict(
+    #     torch.load(
+    #         "./models/option_critic_2_options_with_deliberation_custom-2way-single-intersection_500000_steps"
+    #     )["model_params"]
+    # )
+    
+    agent = option_critic_nn.OptionCriticNeuralNetwork(
         in_features=env.observation_space.shape[0] + 1,
         num_actions=env.action_space.n,
         num_options=2,
@@ -185,10 +249,10 @@ if __name__ == "__main__":
     )
     agent.load_state_dict(
         torch.load(
-            "./models/option_critic_2_options_with_deliberation_custom-2way-single-intersection_500000_steps"
+            "./models/option_critic_nn_2_options_with_deliberation_custom-2way-single-intersection_150000_steps"
         )["model_params"]
     )
 
-    prefix = "oc_cost_500k_steps"
+    prefix = "oc_cost_150k_steps"
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)

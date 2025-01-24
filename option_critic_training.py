@@ -7,26 +7,29 @@ from copy import deepcopy
 
 from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
+from agents.option_critic_nn import OptionCriticNeuralNetwork
 
-from agents.option_critic import critic_loss as critic_loss_fn
-from agents.option_critic import actor_loss as actor_loss_fn
+from agents.option_critic_utils import to_tensor
+from agents.option_critic_utils import critic_loss as critic_loss_fn
+from agents.option_critic_utils import actor_loss as actor_loss_fn
+
+from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 from utils.experience_replay import ReplayBuffer
-from agents.option_critic_utils import to_tensor
 from utils.sb3_logger import SB3Logger as Logger
 
 import time
 
-from sumo_rl import SumoEnvironment
-
 from configs import ROUTE_SETTINGS
 
 TRAFFIC = "custom-2way-single-intersection"
+# TRAFFIC = "cologne1"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 agents = {
     "option_critic": OptionCriticFeatures,
     "option_critic_forced": OptionCriticForced,
+    "option_critic_nn": OptionCriticNeuralNetwork,
 }
 
 parser = argparse.ArgumentParser(description="Option Critic PyTorch")
@@ -127,15 +130,12 @@ def run(args):
     if args.hd_reg:
         experiment_name += "_hd_reg"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = SumoEnvironment(
+    env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
-        # out_csv_name=f"./outputs/oc/{experiment_name}.csv",
-        single_agent=True,
+        # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
-        add_per_agent_info=True,
-        add_system_info=True,
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
@@ -195,7 +195,6 @@ def run(args):
                 curr_op_len = 0
 
             action, logp, entropy = option_critic.get_action(state, current_option)
-
             next_obs, reward, done, truncated, info = env.step(action)
             done = done | truncated
             buffer.push(obs, current_option, reward, next_obs, done)
@@ -248,11 +247,10 @@ def run(args):
         )
         episode += 1
 
-        if steps % 500000 == 0:
-            torch.save(
-                {"model_params": option_critic.state_dict()},
-                f"models/{experiment_name}_{steps}_steps",
-            )
+    torch.save(
+        {"model_params": option_critic.state_dict()},
+        f"models/{experiment_name}_{steps}_steps",
+    )
 
 
 if __name__ == "__main__":
