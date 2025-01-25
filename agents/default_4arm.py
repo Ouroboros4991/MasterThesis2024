@@ -10,7 +10,7 @@ class FourArmIntersection:
             ts_id: {
                 "green_steps": 0,
                 "current_phase": 0,
-                "number_phases": len(traffic_light.green_phases),
+                "number_phases": traffic_light.num_green_phases
             }
             for ts_id, traffic_light in env.traffic_signals.items()
         }

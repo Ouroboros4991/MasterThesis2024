@@ -7,6 +7,7 @@ import torch
 
 import stable_baselines3
 from agents import default_4arm
+from agents import max_pressure
 from agents import option_critic
 from agents import option_critic_nn
 from agents.option_critic_utils import to_tensor
@@ -16,7 +17,7 @@ from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 
 TRAFFIC = "cologne3"
-# TRAFFIC = "custom-2way-single-intersection2"
+# TRAFFIC = "custom-2way-single-intersection"
 
 def visualize():
     # settings = ROUTE_SETTINGS["custom-2way-single-intersection"]
@@ -35,10 +36,10 @@ def visualize():
     obs = env.reset()
 
     
-    print("Action_space", env.action_space)
-    print("Observation_space", env.observation_space)
-    green_duration = 15
-    agent = default_4arm.FourArmIntersection(env, green_duration//env.delta_time)
+    # green_duration = 15
+    # agent = default_4arm.FourArmIntersection(env, green_duration//env.delta_time)
+    agent = max_pressure.MaxPressureAgent(env)
+
     # agent = stable_baselines3.PPO.load(f"./models/ppo_{TRAFFIC}.zip")
     # agent = option_critic.OptionCriticFeatures(
     #     in_features=env.observation_space.shape[0],
@@ -72,6 +73,8 @@ def visualize():
     #         "./models/option_critic_nn_2_options_custom-2way-single-intersection2_150000_steps"
     #     )["model_params"]
     # )
+
+
     terminate = False
     option_termination = True
     try:
