@@ -8,7 +8,7 @@ class FourArmIntersection:
         self.green_duration = green_duration
         self.traffic_light_configs = {
             ts_id: {
-                "green_steps": 0,
+                "time_in_phase": 0,
                 "current_phase": 0,
                 "number_phases": traffic_light.num_green_phases
             }
@@ -29,9 +29,9 @@ class FourArmIntersection:
             # only update the phase if we're in a green phase
             # This to avoid skipping phases because of the yellow phase
             if any(currently_green):
-                ts_config["green_steps"] += 1
-                if ts_config["green_steps"] > self.green_duration:
-                    ts_config["green_steps"] = 0
+                ts_config["time_in_phase"] += 1
+                if ts_config["time_in_phase"] > self.green_duration:
+                    ts_config["time_in_phase"] = 0
                     ts_config["current_phase"] = (ts_config["current_phase"] + 1) % n_phases
             action[ts_id] = ts_config["current_phase"]
         return action, None

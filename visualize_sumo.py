@@ -8,6 +8,7 @@ import torch
 import stable_baselines3
 from agents import default_4arm
 from agents import max_pressure
+from agents import sotl
 from agents import option_critic
 from agents import option_critic_nn
 from agents.option_critic_utils import to_tensor
@@ -38,7 +39,8 @@ def visualize():
     
     # green_duration = 15
     # agent = default_4arm.FourArmIntersection(env, green_duration//env.delta_time)
-    agent = max_pressure.MaxPressureAgent(env)
+    # agent = max_pressure.MaxPressureAgent(env)
+    agent = sotl.SOTLPlatoonAgent(env)
 
     # agent = stable_baselines3.PPO.load(f"./models/ppo_{TRAFFIC}.zip")
     # agent = option_critic.OptionCriticFeatures(
