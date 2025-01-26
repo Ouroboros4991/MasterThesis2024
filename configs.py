@@ -39,6 +39,11 @@ ROUTE_SETTINGS = {
         "begin_time": 25200,
         "end_time": 28800,
     },
+    "cologne8": {
+        "path": "sumo_rl_nets/RESCO/cologne8/cologne8.{type}.xml",
+        "begin_time": 25200,
+        "end_time": 28800,
+    },
     "ingolstadt1": {
         "path": "sumo_rl_nets/RESCO/ingolstadt1/ingolstadt1.{type}.xml",
         "begin_time": 57600,
@@ -49,8 +54,18 @@ ROUTE_SETTINGS = {
         "begin_time": 57600,
         "end_time": 61200,
     },
+    "ingolstadt21": {
+        "path": "sumo_rl_nets/RESCO/ingolstadt21/ingolstadt21.{type}.xml",
+        "begin_time": 57600,
+        "end_time": 61200,
+    },
     "hangzhou_1x1_bc-tyc_18041607_1h": {
         "path": "sumo_rl_nets/hangzhou_1x1_bc-tyc_18041607_1h/hangzhou_1x1_bc-tyc_18041607_1h.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,
+    },
+    "jinan": {
+        "path": "sumo_rl_nets/jinan/jinan.{type}.xml",
         "begin_time": 0,
         "end_time": 3600,
     },

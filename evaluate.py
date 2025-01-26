@@ -1,25 +1,17 @@
+"""Evaluate the provided model using the given environment.
+"""
+
+import argparse
+import pathlib
+
 import numpy as np
 import pandas as pd
-import operator
-
-from sumo_rl import SumoEnvironment
-import gymnasium as gym
 import torch
 
-import stable_baselines3
-from agents import default_4arm
-from agents import option_critic
-from agents import option_critic_nn
-from agents import option_critic_forced
 from agents.option_critic_utils import to_tensor
 from configs import ROUTE_SETTINGS
 from sumo_rl_environment.custom_env import CustomSumoEnvironment
-
-
-TRAFFIC = "custom-2way-single-intersection"
-# TRAFFIC = "cologne1"
-SETTINGS = ROUTE_SETTINGS[TRAFFIC]
-
+from utils import utils
 
 # Example of the info payload
 # {
@@ -37,11 +29,11 @@ SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 
 def run_episode(env, agent):
-    np.random.seed(42)
-    torch.manual_seed(42)
+    # np.random.seed(42)
+    # torch.manual_seed(42)
     results = []
 
-    obs, _ = env.reset()
+    obs = env.reset()
 
     cumulative_reward = 0.0
     average_cumulative_reward = 0.0
@@ -66,8 +58,8 @@ def run_episode(env, agent):
             state = agent.get_state(to_tensor(obs))
             action, logp, entropy = agent.get_action(state, current_option)
 
-        obs, rewards, dones, truncated, info = env.step(action)
-        terminate = dones | truncated
+        obs, rewards, dones, info = env.step(action)
+        terminate = dones['__all__']
 
         try:
             option_termination, greedy_option = agent.predict_option_termination(
@@ -78,12 +70,14 @@ def run_episode(env, agent):
             ].tolist()[0]
         except Exception as e:
             pass
-
-        cumulative_reward += rewards
+        
+        reward_arr = list(rewards.values())
+        cumulative_reward += np.mean(reward_arr)
         mean_waiting_time = info["system_mean_waiting_time"]
         mean_speed = info["system_mean_speed"]
         lane_density = np.sum(
-            [ts.get_lanes_density() for ts in env.traffic_signals.values()]
+            [sum(ts.get_lanes_density())
+             for ts in env.traffic_signals.values()]
         )
         queue_length = np.sum(
             [ts.get_total_queued() for ts in env.traffic_signals.values()]
@@ -116,9 +110,9 @@ def run_episode(env, agent):
 
 def single_episodes(env, agent, prefix):
     results = run_episode(env, agent)
-    print(f"./outputs/evaluation/{prefix}_1_episode_{TRAFFIC}.csv")
+    print(f"./evaluations/{prefix}_1_episode.csv")
     pd.DataFrame(results).to_csv(
-        f"./outputs/evaluation/{prefix}_1_episode_{TRAFFIC}.csv",
+        f"./evaluations/{prefix}_1_episode.csv",
         index=False,
     )
 
@@ -130,8 +124,15 @@ def multiple_episodes(env, agent, prefix):
 
     for episode_number in range(n_episodes):
         print("Episode", episode_number)
-        episode_results = run_episode(env, agent)
-
+        for _ in range(5):
+            try:
+                episode_results = run_episode(env, agent)
+                break
+            except Exception as e:
+                print("Error in episode", episode_number)
+                print(e)
+        else:
+            raise Exception("Failed to run episode")
         # Episode metrics
         # https://sumo.dlr.de/docs/Simulation/Output/TripInfo.html
         # https://sumo.dlr.de/docs/TraCI/Simulation_Value_Retrieval.html
@@ -165,8 +166,10 @@ def multiple_episodes(env, agent, prefix):
         emergency_braking = float(
             env.sumo.simulation.getParameter("", key="stats.safety.emergencyBraking")
         )
-
-        avg_travel_time = total_travel_time / n_vehicles
+        if n_vehicles == 0:
+            avg_travel_time = 0
+        else:
+            avg_travel_time = total_travel_time / n_vehicles
         avg_time_loss = time_loss  # / n_vehicles
         avg_waiting_time = waiting_time  # / n_vehicles
         results.append(
@@ -197,15 +200,17 @@ def multiple_episodes(env, agent, prefix):
         )
     print("Writing multiple episodes to csv")
     pd.DataFrame(results).to_csv(
-        f"./outputs/evaluation/{prefix}_{n_episodes}_episode_{TRAFFIC}.csv",
+        f"./evaluations/{prefix}_{n_episodes}_episode.csv",
         index=False,
     )
 
 
-if __name__ == "__main__":
-    route_file = SETTINGS["path"]
-    start_time = SETTINGS["begin_time"]
-    end_time = SETTINGS["end_time"]
+def main(traffic: str, model: str):
+    settings = ROUTE_SETTINGS[traffic]
+
+    route_file = settings["path"]
+    start_time = settings["begin_time"]
+    end_time = settings["end_time"]
     duration = end_time - start_time
     env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
@@ -214,87 +219,33 @@ if __name__ == "__main__":
         begin_time=start_time,
         num_seconds=duration,
     )
-    # prefix = "fixed_period_15_steps"
-    # green_duration = 15
-    # agent = default_4arm.FourArmIntersection(env.action_space, green_duration//env.delta_time)
-
-    # prefix = "a2c_low"
-    # agent = stable_baselines3.PPO.load(
-    #     "./models/a2c_custom-2way-single-intersection-low.zip"
-    # )
-    
-    # prefix = "a2c"
-    # agent = stable_baselines3.PPO.load(
-    #     "./models/a2c_custom-2way-single-intersection2.zip"
-    # )
-
-    
-    # prefix = "a2c_high"
-    # agent = stable_baselines3.PPO.load(
-    #     "./models/a2c_custom-2way-single-intersection-high.zip"
-    # )
-
-    # prefix = "ppo_cologne1"
-    # agent = stable_baselines3.PPO.load(
-    #     "./models/ppo_cologne1.zip"
-    # )
-
-    # prefix = "dqn_cologne1"
-    # agent = stable_baselines3.DQN.load(
-    #     "./models/dqn_cologne1.zip"
-    # )
-
-    # agent = option_critic.OptionCriticFeatures(
-    #     in_features=env.observation_space.shape[0],
-    #     num_actions=env.action_space.n,
-    #     num_options=2,
-    #     temperature=0.1,
-    #     eps_start=0.9,
-    #     eps_min=0.1,
-    #     eps_decay=0.999,
-    #     eps_test=0.05,
-    #     device="cpu",
-    # )
-    # agent.load_state_dict(
-    #     torch.load(
-    #         "./models/option_critic_2_options_custom-2way-single-intersection_hd_reg_sum_500000_steps"
-    #     )["model_params"]
-    # )
-
-    # prefix = f"option_critic_nn"
-    # agent = option_critic_nn.OptionCriticNeuralNetwork(
-    #     in_features=env.observation_space.shape[0],
-    #     num_actions=env.action_space.n,
-    #     num_options=2,
-    #     temperature=0.1,
-    #     eps_start=0.9,
-    #     eps_min=0.1,
-    #     eps_decay=0.999,
-    #     eps_test=0.05,
-    #     device="cpu",
-    # )
-    # agent.load_state_dict(
-    #     torch.load(
-    #         "./models/option_critic_nn_2_options_custom-2way-single-intersection_150000_steps"
-    #     )["model_params"]
-    # )
-    prefix = f"option_critic_nn_250k"
-    agent = option_critic_nn.OptionCriticNeuralNetwork(
-        in_features=env.observation_space.shape[0],
-        num_actions=env.action_space.n,
-        num_options=2,
-        temperature=0.1,
-        eps_start=0.9,
-        eps_min=0.1,
-        eps_decay=0.999,
-        eps_test=0.05,
-        device="cpu",
-    )
-    agent.load_state_dict(
-        torch.load(
-            "./models/option_critic_nn_2_options_custom-2way-single-intersection_250800_steps"
-        )["model_params"]
-    )
-
+    env.reset()
+    prefix = f"{model}_{traffic}"
+    agent = utils.load_model(model, env)
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)
+
+
+if __name__ == "__main__":
+    pathlib.Path("./evaluations").mkdir(parents=True, exist_ok=True)
+
+    possible_scenarios = list(ROUTE_SETTINGS.keys())
+    possible_scenarios.append('all')
+    parser = argparse.ArgumentParser(
+                    description='Evaluate the provided model using the given traffic scenario.',
+                    )
+    parser.add_argument('-m', '--model', required=True) 
+    parser.add_argument('-t', '--traffic',
+                        choices=possible_scenarios,
+                        required=True) 
+    args = parser.parse_args()
+
+    if args.traffic == 'all':
+        for scenario in ["cologne1", "cologne3", "cologne8",
+                         "ingolstadt1", "ingolstadt7", "ingolstadt21",
+                         "hangzhou_1x1_bc-tyc_18041607_1h", "jinan"]:
+        # for scenario in ROUTE_SETTINGS.keys():
+            main(scenario, args.model)
+    else:
+        main(args.traffic, args.model)
+            

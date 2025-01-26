@@ -2,7 +2,7 @@
 Based on https://sumo.dlr.de/docs/Simulation/Traffic_Lights.html
 """
 
-class FourArmIntersection:
+class CyclicAgent:
     
     def __init__(self, env, green_duration, *args, **kwargs):
         self.green_duration = green_duration
