@@ -43,7 +43,7 @@ class SOTLPlatoonAgent():
         # https://sumo.dlr.de/pydoc/traci._trafficlight.html#TrafficLightDomain-getControlledLinks
         controlled_lanes = traffic_light.sumo.trafficlight.getControlledLanes(ts_id)
         phase_lanes = {}
-        for phase_index, phase in enumerate(traffic_light.green_phases):
+        for phase_index, phase in enumerate(traffic_light.sumo.trafficlight.getAllProgramLogics(traffic_light.id)[0].phases):
             red_lanes = set()
             if len(phase.state) != len(controlled_lanes):
                 raise Exception("Failed to match lanes to phase state")
@@ -51,8 +51,9 @@ class SOTLPlatoonAgent():
                 if lane_state_char.lower() == 'r':
                     lane = controlled_lanes[lane_state_index]
                     red_lanes.add(lane)
-            if not red_lanes:
-                raise Exception("No green lanes found for phase")
+            # if not red_lanes:
+            #     print(phase.state)
+            #     raise Exception("No red lanes found for phase")
             phase_lanes[phase_index] = red_lanes
         return phase_lanes
 

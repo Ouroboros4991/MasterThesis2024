@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import torch
 
-from agents.option_critic_utils import to_tensor
 from configs import ROUTE_SETTINGS
 from sumo_rl_environment.custom_env import CustomSumoEnvironment
 from utils import utils
@@ -44,7 +43,7 @@ def run_episode(env, agent):
     termination_prob = None
     option_termination = True
     try:
-        state = agent.get_state(to_tensor(obs))
+        state = agent.get_state(obs)
         greedy_option = agent.greedy_option(state)
     except Exception as e:
         greedy_option = 0
@@ -55,7 +54,7 @@ def run_episode(env, agent):
             action, _states = agent.predict(obs)
         except AttributeError as e:
             # Option critic
-            state = agent.get_state(to_tensor(obs))
+            state = agent.get_state(obs)
             action, logp, entropy = agent.get_action(state, current_option)
 
         obs, rewards, dones, info = env.step(action)

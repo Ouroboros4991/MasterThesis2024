@@ -8,7 +8,8 @@ from math import exp
 import numpy as np
 
 from agents.option_critic_utils import to_tensor
-from agents.inter_option_policy import InterOptionPolicyNetwork
+from agents.option_networks import ReluNetwork
+from agents.option_networks import TerminationFunctionNetwork
 
 
 class OptionCriticNeuralNetwork(nn.Module):
@@ -28,9 +29,10 @@ class OptionCriticNeuralNetwork(nn.Module):
 
         super(OptionCriticNeuralNetwork, self).__init__()
 
-        self.in_features = in_features
         self.num_actions = num_actions
         self.num_options = num_options
+        self.in_features = in_features + num_options
+
         self.device = device
         self.testing = testing
 
@@ -48,15 +50,18 @@ class OptionCriticNeuralNetwork(nn.Module):
         #     nn.ReLU()
         # )
 
-        self.Q = nn.Linear(in_features, num_options)  # Policy-Over-Options
-        self.terminations = nn.Linear(in_features, num_options)  # Option-Termination
-        self.option_policies = [InterOptionPolicyNetwork(in_features, num_actions, device)
+        # self.Q = nn.Linear(self.in_features, num_options)  # Policy-Over-Options
+        self.Q = ReluNetwork(self.in_features, num_options, device)
+        self.terminations = TerminationFunctionNetwork(self.in_features, self.num_options, device)
+        # self.terminations = nn.Linear(in_features, num_options)  # Option-Termination
+        self.option_policies = [ReluNetwork(self.in_features, num_actions, device)
                                 for _ in range(num_options)]
 
         self.to(device)
         self.train(not testing)
 
     def get_state(self, obs):
+        obs = to_tensor(obs)
         if obs.ndim < 4:
             obs = obs.unsqueeze(0)
         obs = obs.to(self.device)
@@ -68,13 +73,16 @@ class OptionCriticNeuralNetwork(nn.Module):
 
     def predict_option_termination(self, state, current_option):
         termination = self.terminations(state)[:, current_option].sigmoid()
+        # termination = self.terminations(state).sigmoid()
         option_termination = Bernoulli(termination).sample()
         Q = self.get_Q(state)
         next_option = Q.argmax(dim=-1)
         return bool(option_termination.item()), next_option.item()
 
     def get_terminations(self, state):
-        return self.terminations(state).sigmoid()
+        terminations = self.terminations(state)
+        terminations = terminations.sigmoid()
+        return terminations
 
     def get_action(self, state, option):
         action_dist = self.option_policies[option](state)
