@@ -2,6 +2,7 @@
 """
 
 import argparse
+import json
 import pathlib
 
 import numpy as np
@@ -41,34 +42,24 @@ def run_episode(env, agent):
 
     terminate = False
     termination_prob = None
-    option_termination = True
     try:
-        state = agent.get_state(obs)
-        greedy_option = agent.greedy_option(state)
+        state = agent.prep_state(obs)
     except Exception as e:
-        greedy_option = 0
+        pass
     while not terminate:
-        if option_termination:
-            current_option = greedy_option
         try:
-            action, _states = agent.predict(obs)
+            action_dict, _states = agent.predict(obs)
         except AttributeError as e:
             # Option critic
-            state = agent.get_state(obs)
-            action, logp, entropy = agent.get_action(state, current_option)
-
-        obs, rewards, dones, info = env.step(action)
-        terminate = dones['__all__']
-
-        try:
-            option_termination, greedy_option = agent.predict_option_termination(
-                state, current_option
-            )
+            state = agent.prep_state(obs)
+            action, additional_info = agent.get_action(state)
+            action_dict = agent.convert_action_to_dict(action)
             termination_prob = agent.get_terminations(state)[
-                :, current_option
+                :, agent.current_option
             ].tolist()[0]
-        except Exception as e:
-            pass
+
+        obs, rewards, dones, info = env.step(action_dict)
+        terminate = dones['__all__']
         
         reward_arr = list(rewards.values())
         cumulative_reward += np.mean(reward_arr)
@@ -84,13 +75,20 @@ def run_episode(env, agent):
 
         average_cumulative_reward *= 0.95
         average_cumulative_reward += 0.05 * cumulative_reward
+        
+        try:
+            current_option = agent.current_option
+            option_termination = additional_info["termination"]
+            greedy_option = additional_info["greedy_option"]
+        except Exception as e:
+            current_option = 0
 
         results.append(
             {
                 "step": info["step"],
                 "option": current_option,
                 "action": action,
-                "obs": ", ".join([str(n) for n in obs]),
+                "obs": json.dumps(env.get_observations_dict()),
                 "termination_prob": termination_prob,
                 "should_terminate": option_termination,
                 "greedy_option": greedy_option,
@@ -205,20 +203,7 @@ def multiple_episodes(env, agent, prefix):
 
 
 def main(traffic: str, model: str):
-    settings = ROUTE_SETTINGS[traffic]
-
-    route_file = settings["path"]
-    start_time = settings["begin_time"]
-    end_time = settings["end_time"]
-    duration = end_time - start_time
-    env = CustomSumoEnvironment(
-        net_file=route_file.format(type="net"),
-        route_file=route_file.format(type="rou"),
-        # single_agent=True,
-        begin_time=start_time,
-        num_seconds=duration,
-    )
-    env.reset()
+    env = utils.create_env(traffic)
     prefix = f"{model}_{traffic}"
     agent = utils.load_model(model, env)
     single_episodes(env, agent, prefix)

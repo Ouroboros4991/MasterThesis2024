@@ -68,15 +68,17 @@ def critic_loss(model, model_prime, data_batch, args):
     masks = 1 - torch.FloatTensor(dones).to(model.device)
 
     # The loss is the TD loss of Q and the update target, so we need to calculate Q
-    states = model.get_state(obs).squeeze(0)
+    states = obs.squeeze(0) # model.get_state(obs).squeeze(0)
     Q = model.get_Q(states)
 
     # the update target contains Q_next, but for stable learning we use prime network for this
-    next_states_prime = model_prime.get_state(next_obs).squeeze(0)
+    # next_states_prime = model_prime.get_state(next_obs).squeeze(0)
+    next_states_prime = next_obs.squeeze(0)
     next_Q_prime = model_prime.get_Q(next_states_prime)  # detach?
 
     # Additionally, we need the beta probabilities of the next state
-    next_states = model.get_state(next_obs).squeeze(0)
+    # next_states = model.get_state(next_obs).squeeze(0)
+    next_states = next_obs.squeeze(0)
     next_termination_probs = model.get_terminations(next_states).detach()
     next_options_term_prob = next_termination_probs[batch_idx, options]
 
@@ -95,9 +97,9 @@ def actor_loss(
     args,
     option_densities: dict=None,
 ):
-    state = model.get_state(obs)
-    next_state = model.get_state(next_obs)
-    next_state_prime = model_prime.get_state(next_obs)
+    state = obs # model.get_state(obs)
+    next_state = next_obs # model.get_state(next_obs)
+    next_state_prime = next_obs # model_prime.get_state(next_obs)
 
     option_term_prob = model.get_terminations(state)[:, option]
     next_option_term_prob = model.get_terminations(next_state)[:, option].detach()

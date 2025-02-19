@@ -21,8 +21,8 @@ import time
 
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "custom-2way-single-intersection"
-# TRAFFIC = "cologne1"
+# TRAFFIC = "custom-2way-single-intersection"
+TRAFFIC = "cologne8"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 agents = {
@@ -43,7 +43,7 @@ parser.add_argument(
 parser.add_argument(
     "--optimal-eps", type=float, default=0.05, help="Epsilon when playing optimally"
 )
-parser.add_argument("--learning-rate", type=float, default=0.00005, help="Learning rate")
+parser.add_argument("--learning-rate", type=float, default=0.001, help="Learning rate")
 parser.add_argument("--gamma", type=float, default=0.99, help="Discount rate")
 parser.add_argument(
     "--epsilon-start", type=float, default=1.0, help=("Starting value for epsilon.")
@@ -119,14 +119,9 @@ parser.add_argument(
     "--hd_reg", action="store_true", help="Apply Hellinger Distance Regularization"
 )
 
-
 parser.add_argument(
     "--start_min_policy_length", type=int, default=4, help="Ensure that the option policy runs for at least n steps when starting the training"
 )
-
-# parser.add_argument(
-#     "--policy_length_decay", type=float, default=0.95, help="Decay of the minimum policy length, executed every episode"
-# )
 
 def get_lanes_density(env):
     """Returns the density [0,1] of the vehicles in the incoming lanes of the intersection.
@@ -156,11 +151,11 @@ def run(args):
         begin_time=start_time,
         num_seconds=duration,
     )
+    env.reset()
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
     option_critic = agents[args.agent](
-        in_features=env.observation_space.shape[0],
-        num_actions=env.action_space.n,
+        env=env,
         num_options=args.num_options,
         temperature=args.temp,
         eps_start=args.epsilon_start,
@@ -168,11 +163,13 @@ def run(args):
         eps_decay=args.epsilon_decay,
         eps_test=args.optimal_eps,
         device=device,
+        start_min_policy_length=args.start_min_policy_length
     )
     # Create a prime network for more stable Q values
     option_critic_prime = deepcopy(option_critic)
 
-    optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
+    # optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
+    optim = torch.optim.Adam(option_critic.parameters(), lr=args.learning_rate, weight_decay=0.01)
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -184,73 +181,49 @@ def run(args):
         tensorboard_log=args.logdir,
         tb_log_name=f"{experiment_name}-{time.ctime()}",
     )
-    min_option_length = args.start_min_policy_length
-
 
     steps = 0
     while steps < args.max_steps_total:
         done = False
         episode = 0
-        current_option = 0
-        curr_op_len = 0
         steps_since_last_update = 0
         cumulative_rewards = 0
-        option_termination = False
-
-        option_lengths = {opt: [] for opt in range(args.num_options)}
-        option_termination_states = {o: [] for o in range(args.num_options)}
 
         obs = env.reset()        
-        traffic_light_id = list(obs.keys())[0]
         
-        # TODO: update for multi agent setup
-        obs = obs[traffic_light_id]        
-        encoded_option = np.zeros(args.num_options)
-        encoded_option[current_option] = 1
-        obs = np.append(obs, encoded_option)
-        state = option_critic.get_state(obs)   
-
         logger.start_episode(steps) 
+        option_termination_states = {o: [] for o in range(args.num_options)}
+        option_critic.reset()
+
         while not done:
-            epsilon = option_critic.epsilon
+            current_option = option_critic.current_option
+            density = get_lanes_density(env)
 
-            if option_termination:
-                option_lengths[current_option].append(curr_op_len)
-                
-                density = get_lanes_density(env)
+
+            state = option_critic.prep_state(obs)
+            action, additional_info = option_critic.get_action(state)
+            logp = additional_info["logp"]
+            entropy = additional_info["entropy"]
+            if additional_info["termination"]:
                 option_termination_states[current_option].append(density)
-                # TODO: make generic
-                current_option = (
-                    np.random.choice(args.num_options)
-                    if np.random.rand() < epsilon
-                    else greedy_option
-                )
-                # if new_option == current_option:
-                    # current_option = (new_option + 1) % 2
-                curr_op_len = 0
-
-            action, logp, entropy = option_critic.get_action(state, current_option)
-            
-            next_obs, reward, dones, info = env.step({traffic_light_id: action})
+            next_obs, rewards, dones, info = env.step(option_critic.convert_action_to_dict(action))
+            next_state = option_critic.prep_state(next_obs)
             done = dones["__all__"]
-            reward = reward[traffic_light_id]
-            next_obs = next_obs[traffic_light_id]
-            encoded_option = np.zeros(args.num_options)
-            encoded_option[current_option] = 1
-            next_obs = np.append(next_obs, encoded_option)
+                
+            reward = np.mean(list(rewards.values()))
 
-            buffer.push(obs, current_option, reward, next_obs, done)
+            buffer.push(state, option_critic.current_option, reward, next_state, done)
 
             actor_loss, critic_loss = None, None
             if len(buffer) > args.batch_size:
                 actor_loss = actor_loss_fn(
-                    obs,
-                    current_option,
+                    state,
+                    option_critic.current_option,
                     logp,
                     entropy,
                     reward,
                     done,
-                    next_obs,
+                    next_state,
                     option_critic,
                     option_critic_prime,
                     args,
@@ -272,40 +245,28 @@ def run(args):
                 if steps % args.freeze_interval == 0:
                     option_critic_prime.load_state_dict(option_critic.state_dict())
 
-            state = option_critic.get_state(next_obs)
-            # if curr_op_len > min_option_length:
-            #     option_termination, greedy_option = (
-            #         option_critic.predict_option_termination(state, current_option)
-            #     )
-            # else:
-            #     option_termination = False
-            option_termination, greedy_option = (
-                option_critic.predict_option_termination(state, current_option)
-            )
             # update global steps etc
             steps += 1
             steps_since_last_update += 1
-            curr_op_len += 1
             obs = next_obs
             cumulative_rewards += reward
-            # average_cumulative_rewards *= 0.95
-            # average_cumulative_rewards += 0.05 * cumulative_rewards
-        option_lengths[current_option].append(curr_op_len)
+        option_critic.update_option_lengths()
         logger.log_episode(
             num_timesteps=steps,
             iteration=episode,
             reward=cumulative_rewards,
-            option_lengths=option_lengths
+            option_lengths=option_critic.option_lengths
         )
         episode += 1
         # min_option_length = min_option_length * args.policy_length_decay
         # print(min_option_length, args.policy_length_decay)
         
 
-    torch.save(
-        {"model_params": option_critic.state_dict()},
-        f"models/{experiment_name}_{steps}_steps",
-    )
+    # torch.save(
+    #     {"model_params": option_critic.state_dict()},
+    #     f"models/{experiment_name}_{steps}_steps",
+    # )
+    option_critic.save(f"models/{experiment_name}_{steps}_steps")
 
 
 if __name__ == "__main__":

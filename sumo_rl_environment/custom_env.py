@@ -52,7 +52,7 @@ class CustomObservationFunction(ObservationFunction):
         delta_queue = [queue[i]- self.previous_queue_length[i] for i in range(len(queue))]  
         self.previous_queue_length = queue
         return {
-            "current_time": current_time,
+            # "current_time": current_time,
             "phase_ids": phase_ids,
             # "phase_id": phase_id,
             "min_green": min_green,
@@ -65,21 +65,21 @@ class CustomObservationFunction(ObservationFunction):
         """Return the default observation."""
         # TODO: create function that returns the observation as dict
         observation_dict = self.get_observations_dict()
-        current_time = observation_dict["current_time"]
+        # current_time = observation_dict["current_time"]
         phase_ids = observation_dict["phase_ids"]
         # phase_id = observation_dict["phase_id"]
         min_green = observation_dict["min_green"]
         density = observation_dict["density"]
         queue = observation_dict["queue"]
         delta_queue = observation_dict["delta_queue"]
-        observation = np.array(current_time + phase_ids + min_green + density + queue + delta_queue, dtype=np.float32)
+        observation = np.array(phase_ids + min_green + density + queue + delta_queue, dtype=np.float32)
         return observation
 
     def observation_space(self) -> spaces.Box:
         """Return the observation space."""
         return spaces.Box(
-            low=np.zeros(1+ 4*self.ts.num_green_phases + 1 + 3 * len(self.ts.lanes), dtype=np.float32),
-            high=np.ones(1+ 4*self.ts.num_green_phases + 1 + 3 * len(self.ts.lanes), dtype=np.float32),
+            low=np.zeros(4*self.ts.num_green_phases + 1 + 3 * len(self.ts.lanes), dtype=np.float32),
+            high=np.ones(4*self.ts.num_green_phases + 1 + 3 * len(self.ts.lanes), dtype=np.float32),
         )
 
 class CustomTrafficSignal(TrafficSignal):
@@ -155,13 +155,13 @@ class CustomTrafficSignal(TrafficSignal):
 
         # Calculate the reward based on the pressure
         # Scale it with the total length of the cross road
-        reward = self.get_pressure() / self.total_length
+        reward = 10 * (self.get_pressure() / self.total_length)
         # Decrease it by the max amount that a car has been waiting
-        reward -= scaled_max_waiting_time
+        # reward -= 0.1 * scaled_max_waiting_time
 
         # # Decrease the reward further based on how often the phases have changed
         # # Penalize more frequent changes
-        reward -= 0.005 * freq_penalty
+        reward -= 5 * freq_penalty
         return reward
 
 

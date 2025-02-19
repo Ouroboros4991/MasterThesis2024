@@ -1,8 +1,10 @@
 # Source: https://github.com/lweitkamp/option-critic-pytorch/blob/master/experience_replay.py
 
-import numpy as np
 import random
 from collections import deque
+
+import numpy as np
+import torch
 
 
 class ReplayBuffer(object):
@@ -17,7 +19,7 @@ class ReplayBuffer(object):
         obs, option, reward, next_obs, done = zip(
             *self.rng.sample(self.buffer, batch_size)
         )
-        return np.stack(obs), option, reward, np.stack(next_obs), done
+        return torch.stack(obs), np.array(option), np.array(reward), torch.stack(next_obs), np.array(done)
 
     def __len__(self):
         return len(self.buffer)

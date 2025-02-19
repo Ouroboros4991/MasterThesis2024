@@ -1,6 +1,8 @@
 """Evaluate the provided model using the given environment.
 """
 
+# TODO: add logic to 
+
 import argparse
 import json
 import pathlib
@@ -236,8 +238,7 @@ def main(traffic: str, model: str):
     prefix = f"{model}_{traffic}"
     
     agent = option_critic_nn.OptionCriticNeuralNetwork(
-        in_features=env.observation_space.shape[0],
-        num_actions=env.action_space.n,
+        env=env,
         num_options=10,
         temperature=0.1,
         eps_start=0.9,
