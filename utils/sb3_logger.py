@@ -26,7 +26,8 @@ class SB3Logger():
     def log_episode(self,
                     num_timesteps: int,
                     iteration: int,
-                    reward: float):
+                    reward: float,
+                    option_lengths: dict,):
         time_elapsed = (time.time() - self.episode_start_time)
         episode_length = num_timesteps - self._num_timesteps_at_start
         fps = int(episode_length / time_elapsed)
@@ -41,4 +42,7 @@ class SB3Logger():
         self.logger.record("time/fps", fps)
         self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
         self.logger.record("time/total_timesteps", num_timesteps, exclude="tensorboard")
+        
+        for option, lengths in option_lengths.items():
+            self.logger.record(f"options/option_{option}_mean_length", safe_mean(lengths))
         self.logger.dump(step=num_timesteps)

@@ -1,3 +1,5 @@
+
+import argparse
 import numpy as np
 import pandas as pd
 import operator
@@ -5,24 +7,13 @@ import operator
 import gymnasium as gym
 import torch
 
-import stable_baselines3
-from agents import default_4arm
-from agents import option_critic
-from agents import option_critic_nn
 from agents.option_critic_utils import to_tensor
 from configs import ROUTE_SETTINGS
 from sumo_rl_environment.custom_env import CustomSumoEnvironment
+from utils import utils
 
-
-
-# TRAFFIC = "cologne1"
-# TRAFFIC = "custom-2way-single-intersection2"
-TRAFFIC = "hangzhou_1x1_bc-tyc_18041607_1h"
-
-
-def visualize():
-    # settings = ROUTE_SETTINGS["custom-2way-single-intersection"]
-    settings = ROUTE_SETTINGS[TRAFFIC]
+def visualize(traffic: str, model: str):
+    settings = ROUTE_SETTINGS[traffic]
     route_file = settings["path"]
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
@@ -34,43 +25,10 @@ def visualize():
         begin_time=start_time,
         num_seconds=duration,
     )
-    
-    green_duration = 15
-    agent = default_4arm.FourArmIntersection(env.action_space, green_duration//env.delta_time)
-    # agent = stable_baselines3.PPO.load(f"./models/ppo_{TRAFFIC}.zip")
-    # agent = option_critic.OptionCriticFeatures(
-    #     in_features=env.observation_space.shape[0],
-    #     num_actions=env.action_space.n,
-    #     num_options=2,
-    #     temperature=0.1,
-    #     eps_start=0.9,
-    #     eps_min=0.1,
-    #     eps_decay=0.999,
-    #     eps_test=0.05,
-    #     device="cpu",
-    # )
-    # agent.load_state_dict(
-    #     torch.load(
-    #         "./models/option_critic_2_options_custom-2way-single-intersection.csv_500000_steps"
-    #     )["model_params"]
-    # )
-    # agent = option_critic_nn.OptionCriticNeuralNetwork(
-    #     in_features=env.observation_space.shape[0],
-    #     num_actions=env.action_space.n,
-    #     num_options=2,
-    #     temperature=0.1,
-    #     eps_start=0.9,
-    #     eps_min=0.1,
-    #     eps_decay=0.999,
-    #     eps_test=0.05,
-    #     device="cpu",
-    # )
-    # agent.load_state_dict(
-    #     torch.load(
-    #         "./models/option_critic_nn_2_options_custom-2way-single-intersection2_150000_steps"
-    #     )["model_params"]
-    # )
-    obs, _ = env.reset()
+    obs = env.reset()
+
+    agent = utils.load_model(model, env)
+
     terminate = False
     option_termination = True
     try:
@@ -87,8 +45,9 @@ def visualize():
         except AttributeError as e:
             state = agent.get_state(to_tensor(obs))
             action, logp, entropy = agent.get_action(state, current_option)
-        obs, rewards, dones, truncated, info = env.step(action)
-        terminate = dones | truncated
+        
+        obs, rewards, dones, info = env.step(action)
+        terminate = dones['__all__']
         try:
             option_termination, greedy_option = agent.predict_option_termination(
                 state, current_option
@@ -98,4 +57,12 @@ def visualize():
 
 
 if __name__ == "__main__":
-    visualize()
+    parser = argparse.ArgumentParser(
+                    description='Evaluate the provided model using the given traffic scenario.',
+                    )
+    parser.add_argument('-m', '--model', required=True) 
+    parser.add_argument('-t', '--traffic',
+                        choices=ROUTE_SETTINGS.keys(),
+                        required=True) 
+    args = parser.parse_args()
+    visualize(args.traffic, args.model)

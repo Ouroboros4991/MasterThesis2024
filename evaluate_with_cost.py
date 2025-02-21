@@ -7,7 +7,7 @@ import gymnasium as gym
 import torch
 
 import stable_baselines3
-from agents import default_4arm
+from agents import base_cyclic
 from agents import option_critic
 from agents import option_critic_forced
 from agents import option_critic_nn
@@ -215,7 +215,7 @@ if __name__ == "__main__":
         num_seconds=duration,
     )
 
-    # agent = default_4arm.FourArmIntersection(env.action_space)
+    # agent = default_4arm.CyclicAgent(env.action_space)
     # agent = stable_baselines3.PPO.load(
     #     "./models/ppo_custom-2way-single-intersection.zip"
     # )
