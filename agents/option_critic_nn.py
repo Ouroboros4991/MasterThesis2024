@@ -11,6 +11,7 @@ import numpy as np
 from agents.option_critic_utils import to_tensor
 from agents.option_networks import ReluNetwork
 from agents.option_networks import TerminationFunctionNetwork
+from agents.option_networks import QNetwork
 
 
 class OptionCriticNeuralNetwork(nn.Module):
@@ -57,7 +58,7 @@ class OptionCriticNeuralNetwork(nn.Module):
         # )
 
         # self.Q = nn.Linear(self.in_features, num_options)  # Policy-Over-Options
-        self.Q = ReluNetwork(self.in_features, num_options, device)
+        self.Q = QNetwork(self.in_features, num_options, device)
         self.terminations = TerminationFunctionNetwork(self.in_features, self.num_options, device)
         # self.terminations = nn.Linear(in_features, num_options)  # Option-Termination
         self.option_policies = [ReluNetwork(self.in_features, self.num_actions, device)
@@ -173,10 +174,12 @@ class OptionCriticNeuralNetwork(nn.Module):
     #         result += sum(item)
     #     return result
 
-    def get_action(self, state):
+    def get_action(self, state, fixed_option: int = None):
         # Validate the option
         self.curr_op_len += 1
         
+        
+        new_option = self.current_option
         option_termination, greedy_option = (
             self.predict_option_termination(state, self.current_option)
         )
@@ -185,18 +188,21 @@ class OptionCriticNeuralNetwork(nn.Module):
             if self.curr_op_len < self.start_min_policy_length:
                 should_terminate = False
         if should_terminate:
-            self.update_option_lengths()
             
             # density = self.get_lanes_density(self.env)
             # self.option_termination_states[self.current_option].append(density)
             # TODO: make generic
-            self.current_option = (
+            new_option = (
                 np.random.choice(self.num_options)
                 if np.random.rand() < self.epsilon
                 else greedy_option
             )
+        if fixed_option is not None:
+            new_option = fixed_option
+        if new_option != self.current_option:
+            self.update_option_lengths()
             self.curr_op_len = 0
-        
+        self.current_option = new_option
         
         action_dist = self.option_policies[self.current_option](state)
         action_dist = Categorical(logits=action_dist)

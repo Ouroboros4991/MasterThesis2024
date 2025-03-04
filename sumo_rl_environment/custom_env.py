@@ -163,6 +163,40 @@ class CustomTrafficSignal(TrafficSignal):
         # # Penalize more frequent changes
         reward -= 5 * freq_penalty
         return reward
+    
+    
+    def queue_based_reward(self):      
+        waiting_times = self.waiting_time_per_lane()
+        max_waiting_time_per_lane = []
+        for lane_waiting_times in waiting_times:
+            if lane_waiting_times:
+                max_waiting_time_per_lane.append(max(lane_waiting_times))
+            else:
+                max_waiting_time_per_lane.append(0)
+        max_waiting_time = max(max_waiting_time_per_lane)
+        scaled_max_waiting_time = max_waiting_time / self.env.sim_max_time
+        
+        avg_phase_changes = []
+        for phase in range(self.num_green_phases):
+            if self.phases_changes[phase]:
+                avg_phase_changes.append(np.mean(self.phases_changes[phase]))
+        if avg_phase_changes:
+            min_avg_phase_change = min(avg_phase_changes)
+            freq_penalty = 1 - (min_avg_phase_change / self.env.sim_max_time)
+        else:
+            freq_penalty = 0
+
+        # Calculate the reward based on the pressure
+        # Scale it with the total length of the cross road
+        queue_lengths = self.get_lanes_queue()
+        reward = 10 * -1 * max(queue_lengths)
+        # Decrease it by the max amount that a car has been waiting
+        # reward -= 0.1 * scaled_max_waiting_time
+
+        # # Decrease the reward further based on how often the phases have changed
+        # # Penalize more frequent changes
+        reward -= 5 * freq_penalty
+        return reward
 
 
 def custom_reward_function(traffic_signal: CustomTrafficSignal):
@@ -171,6 +205,14 @@ def custom_reward_function(traffic_signal: CustomTrafficSignal):
     and the frequency in which the lights have changed
     """
     return traffic_signal.custom_reward()
+
+
+def queue_based_reward_function(traffic_signal: CustomTrafficSignal):
+    """Custom reward function that uses the pressure reward as a benchmark
+    but penalizes based on the max waiting time of the lane 
+    and the frequency in which the lights have changed
+    """
+    return traffic_signal.queue_based_reward()
 
 
 LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
@@ -303,12 +345,12 @@ class CustomSumoEnvironment(SumoEnvironment):
             single_agent=False,
             add_per_agent_info=True,
             add_system_info=True,
-            # reward_fn='pressure',
             observation_class=CustomObservationFunction,
             use_gui=use_gui,
             additional_sumo_cmd='--tripinfo-output',
-            reward_fn=custom_reward_function,
-            # out_csv_name=out_csv_name
+            # out_csv_name=out_csv_name,
+            # reward_fn=custom_reward_function,
+            reward_fn=queue_based_reward_function,
         )
     
     def get_observations_dict(self):
