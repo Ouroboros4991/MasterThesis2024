@@ -82,13 +82,17 @@ def run_episode(env, agent):
             greedy_option = additional_info["greedy_option"]
         except Exception as e:
             current_option = 0
+        
+        obs_dict = env.get_observations_dict()
+        for _, value in obs_dict.items():
+            value["delta_queue"] = [float(item) for item in value["delta_queue"]]
 
         results.append(
             {
                 "step": info["step"],
                 "option": current_option,
                 "action": action,
-                "obs": json.dumps(env.get_observations_dict()),
+                "obs": json.dumps(obs_dict),
                 "termination_prob": termination_prob,
                 "should_terminate": option_termination,
                 "greedy_option": greedy_option,

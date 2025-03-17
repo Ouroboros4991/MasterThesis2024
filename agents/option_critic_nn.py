@@ -40,6 +40,7 @@ class OptionCriticNeuralNetwork(nn.Module):
         self.eps_decay = eps_decay
         self.eps_test = eps_test
         self.num_steps = 0
+        self.current_option = 0
         
         self.num_options = num_options
         # self.option_termination_states = {o: [] for o in range(self.num_options)}
@@ -88,9 +89,9 @@ class OptionCriticNeuralNetwork(nn.Module):
         
         # include option information
         # Simplified to make it easier to manage
-        # encoded_option = np.zeros(self.num_options)
-        # encoded_option[self.current_option] = 1
-        # obs = np.append(obs, encoded_option)
+        encoded_option = np.zeros(self.num_options)
+        encoded_option[self.current_option] = 1
+        obs_array = np.append(obs_array, encoded_option)
         
         # Convert to tensor
         obs_tensor = to_tensor(obs_array)

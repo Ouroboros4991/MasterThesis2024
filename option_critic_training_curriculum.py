@@ -9,12 +9,13 @@ from agents.option_critic import OptionCriticFeatures
 from agents.option_critic_forced import OptionCriticForced
 from agents.option_critic_nn import OptionCriticNeuralNetwork
 
-from agents.option_critic_utils import critic_loss as critic_loss_fn
+from agents.option_critic_utils import critic_loss_w_option_reward as critic_loss_fn
 from agents.option_critic_utils import actor_loss as actor_loss_fn
 
 from sumo_rl_environment.custom_env import CustomSumoEnvironment
 
 from utils.experience_replay import ReplayBuffer
+from utils.experience_replay import OptionRewardReplayBuffer
 
 from utils.sb3_logger import SB3Logger as Logger
 
@@ -24,10 +25,11 @@ from configs import ROUTE_SETTINGS
 
 
 def get_option(options_dict: dict, current_step: int):
-    for key, value in options_dict.items():
-        start, end = key.split("-")
-        if int(start) <= current_step <= int(end):
-            return value
+    current_step = int(current_step)
+    for steps, option in options_dict.items():
+        start, end = steps.split("-")
+        if int(start) <= current_step < int(end):
+            return option
     return 0
 
 # TRAFFIC = "custom-2way-single-intersection"
@@ -140,10 +142,6 @@ parser.add_argument(
     "--start_min_policy_length", type=int, default=4, help="Ensure that the option policy runs for at least n steps when starting the training"
 )
 
-parser.add_argument(
-    "--fixed_learning", type=int, default=100000, help="Number of steps to run with fixed options"
-)
-
 
 def get_lanes_density(env):
     """Returns the density [0,1] of the vehicles in the incoming lanes of the intersection.
@@ -157,12 +155,23 @@ def get_lanes_density(env):
     return result
 
 
+def get_lanes_max_queue(env):
+    """
+    """
+    traffic_lane_dict = {}
+    for tf_id, tf in env.traffic_signals.items():
+        lane_queues = tf.get_lanes_queue()
+        max_index = np.array(lane_queues).argmax()
+        traffic_lane_dict[tf_id] = max_index
+    return traffic_lane_dict
+        
+
 def run(args):
     route_file = SETTINGS["path"]
     start_time = SETTINGS["begin_time"]
     end_time = SETTINGS["end_time"]
     duration = end_time - start_time
-    experiment_name = f"{args.agent}_{args.fixed_learning}_steps_curriculum_{args.num_options}_options_{TRAFFIC}"
+    experiment_name = f"{args.agent}_curriculum_{args.num_options}_options_{TRAFFIC}"
     if args.hd_reg:
         experiment_name += "_hd_reg"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
@@ -176,7 +185,6 @@ def run(args):
     env.reset()
 
     num_episodes = int(args.max_steps_total / duration) * 5  # number of steps simulated between each time period we can take an action
-    fixed_episode = int(args.fixed_learning / duration) * 5
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
     option_critic = agents[args.agent](
@@ -201,7 +209,7 @@ def run(args):
     torch.manual_seed(args.seed)
     # env.seed(args.seed)
 
-    buffer = ReplayBuffer(capacity=args.max_history, seed=args.seed)
+    buffer = OptionRewardReplayBuffer(capacity=args.max_history, seed=args.seed)
     logger = Logger(
         verbose=3,
         tensorboard_log=args.logdir,
@@ -214,20 +222,26 @@ def run(args):
         done = False
         steps_since_last_update = 0
         cumulative_rewards = 0
+        cumulative_option_rewards = 0
 
         obs = env.reset()        
         
         logger.start_episode(steps) 
         option_termination_states = {o: [] for o in range(args.num_options)}
         option_critic.reset()
-
-        previous_phases = {tf_id: 0 for tf_id in env.traffic_signals.keys()}
-
+        current_option_for_reward = option_critic.current_option
+        option_reward = 0
+        option_reward_smoothing = 0.3
+        
+        max_lanes = get_lanes_max_queue(env)
+        previous_queue_sizes = {
+            tf_id: tf.get_lanes_queue()
+            for tf_id, tf in env.traffic_signals.items()
+        }
+        
+                
         while not done:
-            if episode < fixed_episode:
-                fixed_option = get_option(OPTIONS_DICT, env.sim_step)
-            else:
-                fixed_option = None
+            fixed_option = get_option(OPTIONS_DICT, env.sim_step)
             current_option = option_critic.current_option
             density = get_lanes_density(env)
 
@@ -242,9 +256,49 @@ def run(args):
             next_obs, rewards, dones, info = env.step(action_dict)
             reward = np.mean(list(rewards.values()))
             
+            if int(env.sim_step % 1000) == 995:
+                option_reward = 0
+                for tf_id, prev_queue_size in previous_queue_sizes.items():
+                    max_lane_index = max_lanes[tf_id]
+                    current_queue_sizes = env.traffic_signals[tf_id].get_lanes_queue()
+                    for lane_id, prev_lane_queue in enumerate(prev_queue_size):
+                        current_queue_size = current_queue_sizes[lane_id]
+                        change_in_lane = 10 * (prev_lane_queue - current_queue_size)
+                        if lane_id == max_lane_index:
+                            change_in_lane = change_in_lane * 2
+                        option_reward += change_in_lane
+            else:
+                option_reward = 0
+                if int(env.sim_step % 1000) == 0:
+                    max_lanes = get_lanes_max_queue(env)
+                    previous_queue_sizes = {
+                        tf_id: tf.get_lanes_queue() 
+                        for tf_id, tf in env.traffic_signals.items()
+                    }                
+            # # TODO: define option reward as the changes in the lane with the max density
+            # if current_option_for_reward == current_option:
+            #     # option_reward = reward + option_reward_smoothing * option_reward
+                
+            #     current_option_reward = 0
+            #     for tf_id, lane_index in max_lanes.items():
+            #         current_queue_size = env.traffic_signals[tf_id].get_lanes_queue()[lane_index]
+            #         current_option_reward += previous_queue_sizes[tf_id] - current_queue_size
+            #     current_option_reward = current_option_reward * 10
+            #     # Exponential moving average reward
+            #     option_reward = current_option_reward + (0.99 * option_reward)
+            #     # option_reward = (option_reward_smoothing * current_option_reward) + ((1-option_reward_smoothing) * option_reward)
+            # else:
+            #     # option_reward = reward
+            #     option_reward = 0
+            #     max_lanes = get_lanes_max_queue(env)
+                # previous_queue_sizes = {
+                #     tf_id: tf.get_lanes_queue()[max_lanes[tf_id]] 
+                #     for tf_id, tf in env.traffic_signals.items()
+                # }
+            # option_reward = reward
             next_state = option_critic.prep_state(next_obs)
             done = dones["__all__"]
-            buffer.push(state, option_critic.current_option, reward, next_state, done)
+            buffer.push(state, option_critic.current_option, reward, option_reward, next_state, done)
             
 
             actor_loss, critic_loss = None, None
@@ -288,7 +342,7 @@ def run(args):
             num_timesteps=steps,
             iteration=episode,
             reward=cumulative_rewards,
-            option_lengths=option_critic.option_lengths
+            option_lengths=option_critic.option_lengths,
         )
         # min_option_length = min_option_length * args.policy_length_decay
         # print(min_option_length, args.policy_length_decay)

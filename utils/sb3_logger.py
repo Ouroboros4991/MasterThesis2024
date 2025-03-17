@@ -16,6 +16,7 @@ class SB3Logger():
         self.ep_info_buffer = {
             'reward': [],
             'length': [],
+            # TODO: add option reward as a dict
         }
     
     def start_episode(self, num_timesteps: int):
@@ -27,18 +28,25 @@ class SB3Logger():
                     num_timesteps: int,
                     iteration: int,
                     reward: float,
-                    option_lengths: dict,):
+                    option_lengths: dict,
+                    option_reward: int = None,
+                    ):
         time_elapsed = (time.time() - self.episode_start_time)
         episode_length = num_timesteps - self._num_timesteps_at_start
         fps = int(episode_length / time_elapsed)
 
         self.ep_info_buffer['reward'].append(reward)
+        if option_reward:
+            self.ep_info_buffer['option_reward'].append(option_reward)
         self.ep_info_buffer['length'].append(episode_length)
         
         self.logger.record("time/iterations", iteration, exclude="tensorboard")
         if len(self.ep_info_buffer['reward']) > 0:
             self.logger.record("rollout/ep_rew_mean", safe_mean(self.ep_info_buffer['reward']))
             self.logger.record("rollout/ep_len_mean", safe_mean(self.ep_info_buffer['length']))
+            # if self.ep_info_buffer['option_reward']:
+            #     self.logger.record("rollout/ep_opt_rew_mean", safe_mean(self.ep_info_buffer['option_reward']))
+            
         self.logger.record("time/fps", fps)
         self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
         self.logger.record("time/total_timesteps", num_timesteps, exclude="tensorboard")
