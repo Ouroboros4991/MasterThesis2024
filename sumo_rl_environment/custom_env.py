@@ -41,6 +41,30 @@ class CustomObservationFunction(ObservationFunction):
             for lane in ts.lanes
         ]
         return [min(100, queue * 100) for queue in lanes_queue]
+
+    def waiting_time_per_lane(self):
+        """Returns the waiting time of all vehicles per lane
+        
+        Returns as list of lists
+        """
+        ts = self.ts
+        wait_times_per_lane = []
+        for lane in ts.lanes:
+            veh_list = ts.sumo.lane.getLastStepVehicleIDs(lane)
+            wait_time = []
+            for veh in veh_list:
+                veh_lane = ts.sumo.vehicle.getLaneID(veh)
+                acc = ts.sumo.vehicle.getAccumulatedWaitingTime(veh)
+                if veh not in ts.env.vehicles:
+                    ts.env.vehicles[veh] = {veh_lane: acc}
+                else:
+                    ts.env.vehicles[veh][veh_lane] = acc - sum(
+                        [ts.env.vehicles[veh][lane] for lane in ts.env.vehicles[veh].keys() if lane != veh_lane]
+                    )
+                wait_time.append(ts.env.vehicles[veh][veh_lane])
+            wait_times_per_lane.append(wait_time)
+        return wait_times_per_lane
+    
     
     def get_observations_dict(self) -> dict:
         """Generates the observation as dictionary
@@ -53,14 +77,17 @@ class CustomObservationFunction(ObservationFunction):
 
         current_time = [self.ts.sumo.simulation.getTime()]
         
+        current_phase_ids = []
         for phase in range(self.ts.num_green_phases):
             if self.ts.green_phase == phase:
+                current_phase_ids.append(1)
                 self.phase_id_buffer[phase].appendleft(1)
             else:
+                current_phase_ids.append(0)
                 self.phase_id_buffer[phase].appendleft(0)
-        phase_ids = []
+        hist_phase_ids = []
         for phase in range(self.ts.num_green_phases):
-            phase_ids.extend(list(self.phase_id_buffer[phase]))
+            hist_phase_ids.extend(list(self.phase_id_buffer[phase]))
         # phase_id = [1 if self.ts.green_phase == i else 0 for i in range(self.ts.num_green_phases)]  # one-hot encoding
         
         min_green = [0 if self.ts.time_since_last_phase_change < self.ts.min_green + self.ts.yellow_time else 1]
@@ -71,21 +98,26 @@ class CustomObservationFunction(ObservationFunction):
         #     self.previous_queue_length = [0] * len(queue)
         # delta_queue = [queue[i]- self.previous_queue_length[i] for i in range(len(queue))]  
         # self.previous_queue_length = queue
-        delta_queue = []  # TODO rename to derivative of queue
+        queue_der = []  # TODO rename to derivative of queue
         for i, l in enumerate(queue):
             self.previous_queue_lengths[i].append(l)
             queue_diff = np.diff(self.previous_queue_lengths[i])
             # delta_queue.append(np.mean(queue_diff)) # THis seems to have collapsed the oc into only doing 1 action
-            delta_queue.extend(queue_diff)
+            queue_der.extend(queue_diff)
+        waiting_times = self.waiting_time_per_lane()
         
         return {
             # "current_time": current_time,
-            "phase_ids": phase_ids,
+            "current_phase_ids": current_phase_ids,
+            "hist_phase_ids": hist_phase_ids,
             # "phase_id": phase_id,
             "min_green": min_green,
             "density": density,
             "queue": queue,
-            "delta_queue": delta_queue
+            "queue_der": queue_der,
+            "waiting_times": waiting_times,
+            # "avg_waiting_time": [np.mean(waiting_time) for waiting_time in waiting_times],
+            "average_speed": self.ts.get_average_speed()
         }
 
     def __call__(self) -> np.ndarray:
@@ -93,20 +125,27 @@ class CustomObservationFunction(ObservationFunction):
         # TODO: create function that returns the observation as dict
         observation_dict = self.get_observations_dict()
         # current_time = observation_dict["current_time"]
-        phase_ids = observation_dict["phase_ids"]
-        # phase_id = observation_dict["phase_id"]
-        min_green = observation_dict["min_green"]
-        density = observation_dict["density"]
+        # phase_ids = observation_dict["current_phase_ids"]
+        phase_ids = observation_dict["hist_phase_ids"]
+        # min_green = observation_dict["min_green"]
+        # density = observation_dict["density"]
         queue = observation_dict["queue"]
-        delta_queue = observation_dict["delta_queue"]
-        observation = np.array(phase_ids + min_green + density + queue + delta_queue, dtype=np.float32)
+        queue_der = observation_dict["queue_der"]
+        average_speed = observation_dict["average_speed"]
+        waiting_times = []
+        for waiting_time in observation_dict["waiting_times"]:
+            if waiting_time:
+                waiting_times.append(np.mean(waiting_time))
+            else:
+                waiting_times.append(0)
+        observation = np.array(phase_ids + queue + queue_der + waiting_times + [average_speed], dtype=np.float32)
         return observation
 
     def observation_space(self) -> spaces.Box:
         """Return the observation space."""
         return spaces.Box(
-            low=np.zeros(4*self.ts.num_green_phases + 1 + 3 * len(self.ts.lanes), dtype=np.float32),
-            high=np.ones(4*self.ts.num_green_phases + 1 + 3 * len(self.ts.lanes), dtype=np.float32),
+            low=np.zeros((4*self.ts.num_green_phases) + (3 * len(self.ts.lanes)) + 1, dtype=np.float32),
+            high=np.ones((4*self.ts.num_green_phases) + (3 * len(self.ts.lanes))+ 1, dtype=np.float32),
         )
 
 class CustomTrafficSignal(TrafficSignal):
@@ -122,6 +161,8 @@ class CustomTrafficSignal(TrafficSignal):
         self.steps_in_current_phase = 0
         
         self.total_length = sum([self.sumo.lane.getLength(lane) for lane in self.lanes])
+        
+        self.previous_queue_length = []
     
     def update(self):
         super().update()
@@ -184,15 +225,15 @@ class CustomTrafficSignal(TrafficSignal):
         # Scale it with the total length of the cross road
         reward = 10 * (self.get_pressure() / self.total_length)
         # Decrease it by the max amount that a car has been waiting
-        # reward -= 0.1 * scaled_max_waiting_time
+        reward -= 5 * scaled_max_waiting_time
 
         # # Decrease the reward further based on how often the phases have changed
         # # Penalize more frequent changes
-        reward -= 5 * freq_penalty
+        # reward -= 5 * freq_penalty
         return reward
     
     
-    def queue_based_reward(self):      
+    def get_waiting_time_penalty(self):
         waiting_times = self.waiting_time_per_lane()
         max_waiting_time_per_lane = []
         for lane_waiting_times in waiting_times:
@@ -203,6 +244,11 @@ class CustomTrafficSignal(TrafficSignal):
         max_waiting_time = max(max_waiting_time_per_lane)
         
         scaled_max_waiting_time = max_waiting_time / self.env.sim_max_time
+        return scaled_max_waiting_time
+    
+    
+    def queue_based_reward(self):      
+        scaled_max_waiting_time = self.get_waiting_time_penalty()
         
         avg_phase_changes = []
         for phase in range(self.num_green_phases):
@@ -228,9 +274,85 @@ class CustomTrafficSignal(TrafficSignal):
             base_reward += queue_reward
         base_reward = base_reward / len(queue_lengths)
         reward = 10 * base_reward
+
         
         # Decrease it by the max amount that a car has been waiting
         reward -= 5 * scaled_max_waiting_time
+
+        # # Decrease the reward further based on how often the phases have changed
+        # # Penalize more frequent changes
+        # reward -= 5 * freq_penalty
+        return reward
+
+    
+    def queue_based_reward2(self):      
+        waiting_times = self.waiting_time_per_lane()
+        max_waiting_time_per_lane = []
+        for lane_waiting_times in waiting_times:
+            if lane_waiting_times:
+                max_waiting_time_per_lane.append(max(lane_waiting_times))
+            else:
+                max_waiting_time_per_lane.append(0)
+        max_waiting_time = max(max_waiting_time_per_lane)
+        scaled_max_waiting_time = max_waiting_time / self.env.sim_max_time
+
+        avg_phase_changes = []
+        for phase in range(self.num_green_phases):
+            if self.phases_changes[phase]:
+                avg_phase_changes.append(np.mean(self.phases_changes[phase]))
+        if avg_phase_changes:
+            min_avg_phase_change = min(avg_phase_changes)
+            freq_penalty = 1 - (min_avg_phase_change / self.env.sim_max_time)
+        else:
+            freq_penalty = 0
+
+        # Calculate the reward based on the pressure
+        # Scale it with the total length of the cross road
+        queue_lengths = self.get_lanes_queue()
+        # reward = 10 * -1 * max(queue_lengths)
+        
+        max_queue_lane = np.argmax(queue_lengths)
+        base_reward = 0
+        if self.previous_queue_length:
+            for i, l in enumerate(queue_lengths):
+                queue_reward = self.previous_queue_length[i] - l
+                if i == max_queue_lane:
+                    queue_reward = queue_reward * 2
+                base_reward += queue_reward
+            base_reward = base_reward / len(queue_lengths)
+        # TODO: check for a cleaner way
+        self.previous_queue_length = queue_lengths
+        reward = 10 * base_reward
+        
+        # Decrease it by the max amount that a car has been waiting
+        reward -= 5 * scaled_max_waiting_time
+
+        # # Decrease the reward further based on how often the phases have changed
+        # # Penalize more frequent changes
+        # reward -= 5 * freq_penalty
+        return reward
+    
+    def queue_based_reward3(self):      
+        scaled_max_waiting_time = self.get_waiting_time_penalty()
+        # Calculate the reward based on the pressure
+        # Scale it with the total length of the cross road
+        queue_lengths = self.get_lanes_queue()
+        # reward = 10 * -1 * max(queue_lengths)
+        
+        max_queue_lane = np.argmax(queue_lengths)
+        base_reward = 0
+        for i, l in enumerate(queue_lengths):
+            queue_reward = 1 - l
+            if i == max_queue_lane:
+                queue_reward = queue_reward * 2
+            base_reward += queue_reward
+        base_reward = base_reward / len(queue_lengths)
+        reward = 10 * base_reward
+
+        
+        # Decrease it by the max amount that a car has been waiting
+        reward -= 5 * scaled_max_waiting_time
+        # print("BASE_REWARD", base_reward, scaled_max_waiting_time)
 
         # # Decrease the reward further based on how often the phases have changed
         # # Penalize more frequent changes
@@ -253,6 +375,22 @@ def queue_based_reward_function(traffic_signal: CustomTrafficSignal):
     """
     return traffic_signal.queue_based_reward()
 
+
+def queue_based_reward2_function(traffic_signal: CustomTrafficSignal):
+    """Custom reward function that uses the pressure reward as a benchmark
+    but penalizes based on the max waiting time of the lane 
+    and the frequency in which the lights have changed
+    """
+    return traffic_signal.queue_based_reward2()
+
+
+
+def queue_based_reward3_function(traffic_signal: CustomTrafficSignal):
+    """Custom reward function that uses the pressure reward as a benchmark
+    but penalizes based on the max waiting time of the lane 
+    and the frequency in which the lights have changed
+    """
+    return traffic_signal.queue_based_reward3()
 
 LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
 
@@ -389,7 +527,9 @@ class CustomSumoEnvironment(SumoEnvironment):
             additional_sumo_cmd='--tripinfo-output',
             # out_csv_name=out_csv_name,
             # reward_fn=custom_reward_function,
-            reward_fn=queue_based_reward_function,
+            # reward_fn=queue_based_reward_function,
+            reward_fn=queue_based_reward2_function,
+            # reward_fn=queue_based_reward3_function,
         )
     
     def get_observations_dict(self):

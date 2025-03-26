@@ -26,7 +26,7 @@ class OptionCriticNeuralNetwork(nn.Module):
         eps_test=0.05,
         device="cpu",
         testing=False,
-        start_min_policy_length=None        
+        start_min_policy_length=None
     ):
 
         super(OptionCriticNeuralNetwork, self).__init__()

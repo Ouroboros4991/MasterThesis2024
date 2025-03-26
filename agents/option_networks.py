@@ -6,15 +6,15 @@ import torch.nn.init as init
 
 
 class ReluNetwork(nn.Module):
-    def __init__(self, obs_size, action_size, device):
+    def __init__(self, input_size, output_size, device):
         super().__init__()
         self.flatten = nn.Flatten()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(obs_size, 256),
+            nn.Linear(input_size, 256),
             nn.ReLU(),
             nn.Linear(256, 256),
             nn.ReLU(),
-            nn.Linear(256, action_size),
+            nn.Linear(256, output_size),
         )
         self.to(device)
         # self.apply(self.init_weights)

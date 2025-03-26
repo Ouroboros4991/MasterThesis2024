@@ -42,6 +42,9 @@ def run_episode(env, agent):
 
     terminate = False
     termination_prob = None
+    option_termination = False
+    greedy_option = 0
+    current_option = 0
     try:
         state = agent.prep_state(obs)
     except Exception as e:
@@ -49,14 +52,18 @@ def run_episode(env, agent):
     while not terminate:
         try:
             action_dict, _states = agent.predict(obs)
+            action = action_dict
         except AttributeError as e:
             # Option critic
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
             action_dict = agent.convert_action_to_dict(action)
-            termination_prob = agent.get_terminations(state)[
-                :, agent.current_option
-            ].tolist()[0]
+            try:
+                termination_prob = agent.get_terminations(state)[
+                    :, agent.current_option
+                ].tolist()[0]
+            except AttributeError:
+                termination_prob = 0.0
 
         obs, rewards, dones, info = env.step(action_dict)
         terminate = dones['__all__']
@@ -85,7 +92,7 @@ def run_episode(env, agent):
         
         obs_dict = env.get_observations_dict()
         for _, value in obs_dict.items():
-            value["delta_queue"] = [float(item) for item in value["delta_queue"]]
+            value["queue_der"] = [float(item) for item in value["queue_der"]]
 
         results.append(
             {

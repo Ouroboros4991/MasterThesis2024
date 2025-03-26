@@ -267,6 +267,7 @@ def run(args):
                         if lane_id == max_lane_index:
                             change_in_lane = change_in_lane * 2
                         option_reward += change_in_lane
+                    option_reward = -5 * env.traffic_signals[tf_id].get_waiting_time_penalty()
             else:
                 option_reward = 0
                 if int(env.sim_step % 1000) == 0:
@@ -274,27 +275,7 @@ def run(args):
                     previous_queue_sizes = {
                         tf_id: tf.get_lanes_queue() 
                         for tf_id, tf in env.traffic_signals.items()
-                    }                
-            # # TODO: define option reward as the changes in the lane with the max density
-            # if current_option_for_reward == current_option:
-            #     # option_reward = reward + option_reward_smoothing * option_reward
-                
-            #     current_option_reward = 0
-            #     for tf_id, lane_index in max_lanes.items():
-            #         current_queue_size = env.traffic_signals[tf_id].get_lanes_queue()[lane_index]
-            #         current_option_reward += previous_queue_sizes[tf_id] - current_queue_size
-            #     current_option_reward = current_option_reward * 10
-            #     # Exponential moving average reward
-            #     option_reward = current_option_reward + (0.99 * option_reward)
-            #     # option_reward = (option_reward_smoothing * current_option_reward) + ((1-option_reward_smoothing) * option_reward)
-            # else:
-            #     # option_reward = reward
-            #     option_reward = 0
-            #     max_lanes = get_lanes_max_queue(env)
-                # previous_queue_sizes = {
-                #     tf_id: tf.get_lanes_queue()[max_lanes[tf_id]] 
-                #     for tf_id, tf in env.traffic_signals.items()
-                # }
+                    }             
             # option_reward = reward
             next_state = option_critic.prep_state(next_obs)
             done = dones["__all__"]

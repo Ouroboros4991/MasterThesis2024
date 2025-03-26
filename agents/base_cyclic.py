@@ -25,7 +25,11 @@ class CyclicAgent:
         action = {}
         for ts_id, ts_config in self.traffic_light_configs.items():
             n_phases = ts_config["number_phases"]
-            currently_green = observation[ts_id][0:n_phases]
+            currently_green = []
+            for i in range(n_phases):
+                current_phase = i * 4
+                currently_green.append(observation[ts_id][current_phase])
+            # currently_green = observation[ts_id][0:n_phases]
             # only update the phase if we're in a green phase
             # This to avoid skipping phases because of the yellow phase
             if any(currently_green):

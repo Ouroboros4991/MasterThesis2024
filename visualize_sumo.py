@@ -37,24 +37,18 @@ def visualize(traffic: str, model: str):
     except Exception as e:
         greedy_option = 0
     while not terminate:
-        if option_termination:
-            current_option = greedy_option
-
         try:
-            action, _states = agent.predict(obs)
+            action_dict, _states = agent.predict(obs)
+            action = action_dict
         except AttributeError as e:
-            state = agent.get_state(to_tensor(obs))
-            action, logp, entropy = agent.get_action(state, current_option)
-        
-        obs, rewards, dones, info = env.step(action)
-        terminate = dones['__all__']
-        try:
-            option_termination, greedy_option = agent.predict_option_termination(
-                state, current_option
-            )
-        except Exception as e:
-            pass
+            # Option critic
+            state = agent.prep_state(obs)
+            action, additional_info = agent.get_action(state)
+            # print(env.sim_step, agent.current_option, action)
+            action_dict = agent.convert_action_to_dict(action)
 
+        obs, rewards, dones, info = env.step(action_dict)
+        terminate = dones['__all__']
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
