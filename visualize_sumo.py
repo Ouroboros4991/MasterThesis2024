@@ -44,7 +44,7 @@ def visualize(traffic: str, model: str):
             # Option critic
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
-            # print(env.sim_step, agent.current_option, action)
+            print(env.sim_step, agent.current_option, action)
             action_dict = agent.convert_action_to_dict(action)
 
         obs, rewards, dones, info = env.step(action_dict)

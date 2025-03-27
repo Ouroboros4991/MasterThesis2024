@@ -98,7 +98,7 @@ def run_episode(env, agent):
             {
                 "step": info["step"],
                 "option": current_option,
-                "action": action,
+                "action": action_dict,
                 "obs": json.dumps(obs_dict),
                 "termination_prob": termination_prob,
                 "should_terminate": option_termination,
