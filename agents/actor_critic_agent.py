@@ -177,7 +177,7 @@ class CustomActorCritic(nn.Module):
         self.critic_network.load_state_dict(state_dict["critic"])
     
     
-    def calculate_loss(self, obs, option, logp, entropy, reward, done, next_obs,  args):
+    def calculate_loss(self, obs, option, logp, entropy, reward, done, next_obs,  gamma):
         # Based on https://github.com/pytorch/examples/blob/main/reinforcement_learning/actor_critic.py
         # https://github.com/chengxi600/RLStuff/blob/master/Actor-Critic/Actor-Critic_TD_0.ipynb
         state = obs
@@ -187,8 +187,8 @@ class CustomActorCritic(nn.Module):
         next_value = self.critic_network(next_state)
         
         mse_loss = nn.MSELoss()
-        critic_loss = mse_loss(value, reward + (args.gamma * next_value))
+        critic_loss = mse_loss(value, reward + (gamma * next_value))
         
-        advantage = reward + (args.gamma * next_value) - value
+        advantage = reward + (gamma * next_value) - value
         actor_loss = -logp * advantage
         return actor_loss, critic_loss

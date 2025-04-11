@@ -21,8 +21,8 @@ import time
 
 from configs import ROUTE_SETTINGS
 
-# TRAFFIC = "custom-2way-single-intersection"
-TRAFFIC = "cologne8"
+TRAFFIC = "custom-2way-single-intersection3"
+# TRAFFIC = "cologne8"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 agents = {
@@ -150,6 +150,7 @@ def run(args):
         # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
+        intelli_light_weight={"delay": 3, "waiting_time": 3, "light_switches": 2},
     )
     env.reset()
 
@@ -189,7 +190,7 @@ def run(args):
         steps_since_last_update = 0
         cumulative_rewards = 0
 
-        obs = env.reset()        
+        obs, _ = env.reset()        
         
         logger.start_episode(steps) 
         option_termination_states = {o: [] for o in range(args.num_options)}
@@ -206,11 +207,8 @@ def run(args):
             entropy = additional_info["entropy"]
             if additional_info["termination"]:
                 option_termination_states[current_option].append(density)
-            next_obs, rewards, dones, info = env.step(option_critic.convert_action_to_dict(action))
+            next_obs, reward, done, truncated, info = env.step(option_critic.convert_action_to_dict(action))
             next_state = option_critic.prep_state(next_obs)
-            done = dones["__all__"]
-                
-            reward = np.mean(list(rewards.values()))
 
             buffer.push(state, option_critic.current_option, reward, next_state, done)
 

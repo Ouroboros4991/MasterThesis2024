@@ -25,7 +25,8 @@ def visualize(traffic: str, model: str):
         begin_time=start_time,
         num_seconds=duration,
     )
-    obs = env.reset()
+    env = utils.DictToFlatActionWrapper(env)
+    obs, _ = env.reset()
 
     agent = utils.load_model(model, env)
 
@@ -44,11 +45,15 @@ def visualize(traffic: str, model: str):
             # Option critic
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
-            print(env.sim_step, agent.current_option, action)
             action_dict = agent.convert_action_to_dict(action)
+        try:
+            # env.env.sumo.vehicle.getLaneID is 0 if the vehicle is not in a lane yet
+            print(env.env.sim_step, env.env.sumo.vehicle.getLaneID("emergency_0"), env.env.sumo.vehicle.getAccumulatedWaitingTime("emergency_0"))
+        except Exception as e:
+            print(e)
+            pass
 
-        obs, rewards, dones, info = env.step(action_dict)
-        terminate = dones['__all__']
+        obs, reward, terminate, truncated, info = env.step(action_dict)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

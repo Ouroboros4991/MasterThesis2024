@@ -23,15 +23,23 @@ def generate_lane_dicts(tf) -> dict:
     """    
 
     incoming_lane_dict = {}
-    outcoming_lane_dict = {}
+    cleaned_incoming_lane_dict = {}
+    cleaned_outgoing_lane_dict = {}
+    outgoing_lane_dict = {}
     lane_index = 0
     for lane_index, lane_id in enumerate(tf.sumo.trafficlight.getControlledLanes(tf.id)):
         incoming_lane_dict[lane_index] = lane_id
     for lane_index, lane_id in enumerate(tf.out_lanes):
-        outcoming_lane_dict[lane_index] = lane_id
+        outgoing_lane_dict[lane_index] = lane_id
+    for lane_index, lane_id in enumerate(list(set(tf.sumo.trafficlight.getControlledLanes(tf.id)))):
+        cleaned_incoming_lane_dict[lane_index] = lane_id
+    for lane_index, lane_id in enumerate(list(set(tf.out_lanes))):
+        cleaned_outgoing_lane_dict[lane_index] = lane_id
     return {
         "incoming": incoming_lane_dict,
-        "outcoming": outcoming_lane_dict
+        "cleaned_incoming": cleaned_incoming_lane_dict,
+        "outgoing": outgoing_lane_dict,
+        "cleaned_outgoing": cleaned_outgoing_lane_dict
     }
 
 

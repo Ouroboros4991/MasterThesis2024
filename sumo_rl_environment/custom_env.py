@@ -16,6 +16,7 @@ from sumo_rl import SumoEnvironment
 from sumo_rl.environment.observations import ObservationFunction, DefaultObservationFunction
 from sumo_rl.environment.traffic_signal import TrafficSignal
 
+from sumo_rl_environment.custom_traffic_light import CustomTrafficSignal
 
 class CustomObservationFunction(ObservationFunction):
     """Default observation function for traffic signals."""
@@ -125,240 +126,29 @@ class CustomObservationFunction(ObservationFunction):
         # TODO: create function that returns the observation as dict
         observation_dict = self.get_observations_dict()
         # current_time = observation_dict["current_time"]
-        # phase_ids = observation_dict["current_phase_ids"]
-        phase_ids = observation_dict["hist_phase_ids"]
+        phase_ids = observation_dict["current_phase_ids"]
+        # phase_ids = observation_dict["hist_phase_ids"]
         # min_green = observation_dict["min_green"]
         # density = observation_dict["density"]
         queue = observation_dict["queue"]
-        queue_der = observation_dict["queue_der"]
-        average_speed = observation_dict["average_speed"]
+        # queue_der = observation_dict["queue_der"]
+        # average_speed = observation_dict["average_speed"]
         waiting_times = []
         for waiting_time in observation_dict["waiting_times"]:
             if waiting_time:
                 waiting_times.append(np.mean(waiting_time))
             else:
                 waiting_times.append(0)
-        observation = np.array(phase_ids + queue + queue_der + waiting_times + [average_speed], dtype=np.float32)
+        # observation = np.array(phase_ids + queue + queue_der + waiting_times + [average_speed], dtype=np.float32)
+        observation = np.array(phase_ids + queue + waiting_times, dtype=np.float32)
         return observation
 
     def observation_space(self) -> spaces.Box:
         """Return the observation space."""
         return spaces.Box(
-            low=np.zeros((4*self.ts.num_green_phases) + (3 * len(self.ts.lanes)) + 1, dtype=np.float32),
-            high=np.ones((4*self.ts.num_green_phases) + (3 * len(self.ts.lanes))+ 1, dtype=np.float32),
+            low=np.zeros((self.ts.num_green_phases) + (2 * len(self.ts.lanes)) , dtype=np.float32),
+            high=np.ones((self.ts.num_green_phases) + (2 * len(self.ts.lanes)), dtype=np.float32),
         )
-
-class CustomTrafficSignal(TrafficSignal):
-    """Traffic signal class with some additional logic for the custom reward
-    """
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Keep track of how often a phase has been changed
-        self.phases_changes = {i: [] for i in range(self.num_green_phases)}
-        self.current_freq_phase = self.green_phase
-        self.steps_in_current_phase = 0
-        
-        self.total_length = sum([self.sumo.lane.getLength(lane) for lane in self.lanes])
-        
-        self.previous_queue_length = []
-    
-    def update(self):
-        super().update()
-        if self.current_freq_phase == self.green_phase:
-            self.steps_in_current_phase += 1
-        else:
-            self.phases_changes[self.current_freq_phase].append(self.steps_in_current_phase)
-            self.current_freq_phase = self.green_phase
-            self.steps_in_current_phase = 0
-
-
-    def waiting_time_per_lane(self):
-        """Returns the waiting time of all vehicles per lane
-        
-        Returns as list of lists
-        """
-        wait_times_per_lane = []
-        for lane in self.lanes:
-            veh_list = self.sumo.lane.getLastStepVehicleIDs(lane)
-            wait_time = []
-            for veh in veh_list:
-                veh_lane = self.sumo.vehicle.getLaneID(veh)
-                acc = self.sumo.vehicle.getAccumulatedWaitingTime(veh)
-                if veh not in self.env.vehicles:
-                    self.env.vehicles[veh] = {veh_lane: acc}
-                else:
-                    self.env.vehicles[veh][veh_lane] = acc - sum(
-                        [self.env.vehicles[veh][lane] for lane in self.env.vehicles[veh].keys() if lane != veh_lane]
-                    )
-                wait_time.append(self.env.vehicles[veh][veh_lane])
-            wait_times_per_lane.append(wait_time)
-        return wait_times_per_lane
-    
-    def custom_reward(self):
-        """Custom reward function that uses the pressure reward as a benchmark
-        but penalizes based on the max waiting time of the lane 
-        and the frequency in which the lights have changed
-        """
-        waiting_times = self.waiting_time_per_lane()
-        max_waiting_time_per_lane = []
-        for lane_waiting_times in waiting_times:
-            if lane_waiting_times:
-                max_waiting_time_per_lane.append(max(lane_waiting_times))
-            else:
-                max_waiting_time_per_lane.append(0)
-        max_waiting_time = max(max_waiting_time_per_lane)
-        scaled_max_waiting_time = max_waiting_time / self.env.sim_max_time
-        
-        avg_phase_changes = []
-        for phase in range(self.num_green_phases):
-            if self.phases_changes[phase]:
-                avg_phase_changes.append(np.mean(self.phases_changes[phase]))
-        if avg_phase_changes:
-            min_avg_phase_change = min(avg_phase_changes)
-            freq_penalty = 1 - (min_avg_phase_change / self.env.sim_max_time)
-        else:
-            freq_penalty = 0
-
-        # Calculate the reward based on the pressure
-        # Scale it with the total length of the cross road
-        reward = 10 * (self.get_pressure() / self.total_length)
-        # Decrease it by the max amount that a car has been waiting
-        reward -= 5 * scaled_max_waiting_time
-
-        # # Decrease the reward further based on how often the phases have changed
-        # # Penalize more frequent changes
-        # reward -= 5 * freq_penalty
-        return reward
-    
-    
-    def get_waiting_time_penalty(self):
-        waiting_times = self.waiting_time_per_lane()
-        max_waiting_time_per_lane = []
-        for lane_waiting_times in waiting_times:
-            if lane_waiting_times:
-                max_waiting_time_per_lane.append(max(lane_waiting_times))
-            else:
-                max_waiting_time_per_lane.append(0)
-        max_waiting_time = max(max_waiting_time_per_lane)
-        
-        scaled_max_waiting_time = max_waiting_time / self.env.sim_max_time
-        return scaled_max_waiting_time
-    
-    
-    def queue_based_reward(self):      
-        scaled_max_waiting_time = self.get_waiting_time_penalty()
-        
-        avg_phase_changes = []
-        for phase in range(self.num_green_phases):
-            if self.phases_changes[phase]:
-                avg_phase_changes.append(np.mean(self.phases_changes[phase]))
-        if avg_phase_changes:
-            min_avg_phase_change = min(avg_phase_changes)
-            freq_penalty = 1 - (min_avg_phase_change / self.env.sim_max_time)
-        else:
-            freq_penalty = 0
-
-        # Calculate the reward based on the pressure
-        # Scale it with the total length of the cross road
-        queue_lengths = self.get_lanes_queue()
-        # reward = 10 * -1 * max(queue_lengths)
-        
-        max_queue_lane = np.argmax(queue_lengths)
-        base_reward = 0
-        for i, l in enumerate(queue_lengths):
-            queue_reward = 1 - l
-            if i == max_queue_lane:
-                queue_reward = queue_reward * 2
-            base_reward += queue_reward
-        base_reward = base_reward / len(queue_lengths)
-        reward = 10 * base_reward
-
-        
-        # Decrease it by the max amount that a car has been waiting
-        reward -= 5 * scaled_max_waiting_time
-
-        # # Decrease the reward further based on how often the phases have changed
-        # # Penalize more frequent changes
-        # reward -= 5 * freq_penalty
-        return reward
-
-    
-    def queue_based_reward2(self):      
-        waiting_times = self.waiting_time_per_lane()
-        max_waiting_time_per_lane = []
-        for lane_waiting_times in waiting_times:
-            if lane_waiting_times:
-                max_waiting_time_per_lane.append(max(lane_waiting_times))
-            else:
-                max_waiting_time_per_lane.append(0)
-        max_waiting_time = max(max_waiting_time_per_lane)
-        scaled_max_waiting_time = max_waiting_time / self.env.sim_max_time
-
-        avg_phase_changes = []
-        for phase in range(self.num_green_phases):
-            if self.phases_changes[phase]:
-                avg_phase_changes.append(np.mean(self.phases_changes[phase]))
-        if avg_phase_changes:
-            min_avg_phase_change = min(avg_phase_changes)
-            freq_penalty = 1 - (min_avg_phase_change / self.env.sim_max_time)
-        else:
-            freq_penalty = 0
-
-        # Calculate the reward based on the pressure
-        # Scale it with the total length of the cross road
-        queue_lengths = self.get_lanes_queue()
-        # reward = 10 * -1 * max(queue_lengths)
-        
-        max_queue_lane = np.argmax(queue_lengths)
-        base_reward = 0
-        if self.previous_queue_length:
-            for i, l in enumerate(queue_lengths):
-                queue_reward = self.previous_queue_length[i] - l
-                if i == max_queue_lane:
-                    queue_reward = queue_reward * 2
-                base_reward += queue_reward
-            base_reward = base_reward / len(queue_lengths)
-        # TODO: check for a cleaner way
-        self.previous_queue_length = queue_lengths
-        reward = 10 * base_reward
-        
-        # Decrease it by the max amount that a car has been waiting
-        reward -= 5 * scaled_max_waiting_time
-
-        # # Decrease the reward further based on how often the phases have changed
-        # # Penalize more frequent changes
-        # reward -= 5 * freq_penalty
-        return reward
-    
-    def queue_based_reward3(self):      
-        scaled_max_waiting_time = self.get_waiting_time_penalty()
-        # Calculate the reward based on the pressure
-        # Scale it with the total length of the cross road
-        queue_lengths = self.get_lanes_queue()
-        # reward = 10 * -1 * max(queue_lengths)
-        
-        max_queue_lane = np.argmax(queue_lengths)
-        base_reward = 0
-        for i, l in enumerate(queue_lengths):
-            queue_reward = 1 - l
-            if i == max_queue_lane:
-                queue_reward = queue_reward * 2
-            base_reward += queue_reward
-        base_reward = base_reward / len(queue_lengths)
-        reward = 10 * base_reward
-
-        
-        # Decrease it by the max amount that a car has been waiting
-        reward -= 5 * scaled_max_waiting_time
-        # print("BASE_REWARD", base_reward, scaled_max_waiting_time)
-
-        # # Decrease the reward further based on how often the phases have changed
-        # # Penalize more frequent changes
-        # reward -= 5 * freq_penalty
-        return reward
-
 
 def custom_reward_function(traffic_signal: CustomTrafficSignal):
     """Custom reward function that uses the pressure reward as a benchmark
@@ -392,6 +182,14 @@ def queue_based_reward3_function(traffic_signal: CustomTrafficSignal):
     """
     return traffic_signal.queue_based_reward3()
 
+
+def intelli_light_reward(traffic_signal: CustomTrafficSignal):
+    return traffic_signal.intelli_light_reward()
+
+
+def intelli_light_reward_prioritized(traffic_signal: CustomTrafficSignal):
+    return traffic_signal.intelli_light_reward_prioritized()
+
 LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
 
 
@@ -423,6 +221,7 @@ class CustomSumoEnvironment(SumoEnvironment):
         sumo_warnings: bool = True,
         additional_sumo_cmd: Optional[str] = None,
         render_mode: Optional[str] = None,
+        intelli_light_weight: dict = {}
     ) -> None:
         """Original init function of the SumoEnvironment class"""
         assert render_mode is None or render_mode in self.metadata["render_modes"], "Invalid render mode."
@@ -470,6 +269,7 @@ class CustomSumoEnvironment(SumoEnvironment):
 
         self.ts_ids = list(conn.trafficlight.getIDList())
         self.observation_class = observation_class
+        self.intelli_light_weight = intelli_light_weight
 
         if isinstance(self.reward_fn, dict):
             self.traffic_signals = {
@@ -483,6 +283,7 @@ class CustomSumoEnvironment(SumoEnvironment):
                     self.begin_time,
                     self.reward_fn[ts],
                     conn,
+                    intelli_light_weight=self.intelli_light_weight,
                 )
                 for ts in self.reward_fn.keys()
             }
@@ -498,6 +299,7 @@ class CustomSumoEnvironment(SumoEnvironment):
                     self.begin_time,
                     self.reward_fn,
                     conn,
+                    intelli_light_weight=self.intelli_light_weight,
                 )
                 for ts in self.ts_ids
             }
@@ -513,7 +315,18 @@ class CustomSumoEnvironment(SumoEnvironment):
         self.rewards = {ts: None for ts in self.ts_ids}
     
     
-    def __init__(self, net_file, route_file, begin_time, num_seconds, use_gui=False, out_csv_name=None):
+    
+    def __init__(self, net_file, route_file, begin_time, num_seconds, use_gui=False, out_csv_name=None,
+                 reward_fn: str = "intelli_light_reward",
+                 intelli_light_weight: dict = {}):
+        reward_mapping = {
+            "pressure": "pressure",
+            "intelli_light_reward" : intelli_light_reward,
+            "intelli_light_reward_prioritized": intelli_light_reward_prioritized,
+        }
+        if not reward_fn:
+            reward_fn = "intelli_light_reward"
+
         self.super_init(
             net_file=net_file,
             route_file=route_file,
@@ -528,9 +341,47 @@ class CustomSumoEnvironment(SumoEnvironment):
             # out_csv_name=out_csv_name,
             # reward_fn=custom_reward_function,
             # reward_fn=queue_based_reward_function,
-            reward_fn=queue_based_reward2_function,
+            # reward_fn=queue_based_reward2_function,
             # reward_fn=queue_based_reward3_function,
+            reward_fn=reward_mapping[reward_fn],
+            intelli_light_weight=intelli_light_weight,
         )
+        self.num_seconds = num_seconds
+    
+    
+    def step(self, action: Union[dict, int]):
+        """Apply the action(s) and then step the simulation for delta_time seconds.
+
+        Args:
+            action (Union[dict, int]): action(s) to be applied to the environment.
+            If single_agent is True, action is an int, otherwise it expects a dict with keys corresponding to traffic signal ids.
+        """
+        observations, rewards, dones, info = super().step(action)
+        terminated = dones["__all__"]
+        truncated = terminated
+        reward = np.mean(list(rewards.values()))
+        return observations, reward, terminated, truncated, info
+    
+    @property
+    def action_space(self):
+        """Return the action space of a traffic signal.
+
+        Only used in case of single-agent environment.
+        """
+        if not self.single_agent:
+            return spaces.Dict({ts: self.traffic_signals[ts].action_space for ts in self.ts_ids})
+        return self.traffic_signals[self.ts_ids[0]].action_space
+    
+    
+    @property
+    def observation_space(self):
+        """Return the observation space of a traffic signal.
+
+        Only used in case of single-agent environment.
+        """
+        if not self.single_agent:
+            return spaces.Dict({ts: self.traffic_signals[ts].observation_space for ts in self.ts_ids})
+        return self.traffic_signals[self.ts_ids[0]].observation_space
     
     def get_observations_dict(self):
         """Returns the observation dict per traffic signal."""
@@ -567,6 +418,7 @@ class CustomSumoEnvironment(SumoEnvironment):
                     self.begin_time,
                     self.reward_fn[ts],
                     self.sumo,
+                    intelli_light_weight=self.intelli_light_weight,
                 )
                 for ts in self.reward_fn.keys()
             }
@@ -582,6 +434,7 @@ class CustomSumoEnvironment(SumoEnvironment):
                     self.begin_time,
                     self.reward_fn,
                     self.sumo,
+                    intelli_light_weight=self.intelli_light_weight,
                 )
                 for ts in self.ts_ids
             }
@@ -594,4 +447,4 @@ class CustomSumoEnvironment(SumoEnvironment):
         if self.single_agent:
             return self._compute_observations()[self.ts_ids[0]], self._compute_info()
         else:
-            return self._compute_observations()
+            return self._compute_observations(), self._compute_info()

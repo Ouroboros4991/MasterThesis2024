@@ -29,6 +29,16 @@ ROUTE_SETTINGS = {
         "begin_time": 0,
         "end_time": 1000,
     },
+    "custom-2way-single-intersection-low-emergency": {
+        "path": "sumo_rl_nets/custom-2way-single-intersection-low-emergency/single-intersection.{type}.xml",
+        "begin_time": 0,
+        "end_time": 1000,
+    },
+    "custom-2way-single-intersection-high-emergency": {
+        "path": "sumo_rl_nets/custom-2way-single-intersection-high-emergency/single-intersection.{type}.xml",
+        "begin_time": 0,
+        "end_time": 1000,
+    },
     "single-intersection": {
         "path": "sumo_rl_nets/single-intersection/single-intersection.{type}.xml",
         "begin_time": 0,

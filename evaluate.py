@@ -33,7 +33,7 @@ def run_episode(env, agent):
     # torch.manual_seed(42)
     results = []
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     cumulative_reward = 0.0
     average_cumulative_reward = 0.0
@@ -65,11 +65,8 @@ def run_episode(env, agent):
             except AttributeError:
                 termination_prob = 0.0
 
-        obs, rewards, dones, info = env.step(action_dict)
-        terminate = dones['__all__']
-        
-        reward_arr = list(rewards.values())
-        cumulative_reward += np.mean(reward_arr)
+        obs, reward, done, terminate, info = env.step(action_dict)
+        cumulative_reward += reward
         mean_waiting_time = info["system_mean_waiting_time"]
         mean_speed = info["system_mean_speed"]
         lane_density = np.sum(
@@ -116,18 +113,18 @@ def run_episode(env, agent):
     return results
 
 
-def single_episodes(env, agent, prefix):
+def single_episodes(env, agent, prefix, save: bool=True):
     results = run_episode(env, agent)
-    print(f"./evaluations/{prefix}_1_episode.csv")
-    pd.DataFrame(results).to_csv(
-        f"./evaluations/{prefix}_1_episode.csv",
-        index=False,
-    )
+    if save:
+        print("Writing single episode to csv")
+        pd.DataFrame(results).to_csv(
+            f"./evaluations/{prefix}_1_episode.csv",
+            index=False,
+        )
+    return results
 
 
-def multiple_episodes(env, agent, prefix):
-    n_episodes = 100
-    average_cumulative_reward = 0.0
+def multiple_episodes(env, agent, prefix, n_episodes: int=100, save: bool=True):
     results = []
 
     for episode_number in range(n_episodes):
@@ -206,15 +203,19 @@ def multiple_episodes(env, agent, prefix):
                 "emergency_braking": emergency_braking,
             }
         )
-    print("Writing multiple episodes to csv")
-    pd.DataFrame(results).to_csv(
-        f"./evaluations/{prefix}_{n_episodes}_episode.csv",
-        index=False,
-    )
+    if save:
+        print("Writing multiple episodes to csv")
+        pd.DataFrame(results).to_csv(
+            f"./evaluations/{prefix}_{n_episodes}_episode.csv",
+            index=False,
+        )
+    return results
 
 
 def main(traffic: str, model: str):
-    env = utils.create_env(traffic)
+    env = utils.create_env(traffic, reward_fn="pressure")
+    if model.startswith("a2c"):
+        env = utils.DictToFlatActionWrapper(env)
     prefix = f"{model}_{traffic}"
     agent = utils.load_model(model, env)
     single_episodes(env, agent, prefix)

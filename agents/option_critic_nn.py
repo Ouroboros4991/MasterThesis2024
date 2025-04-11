@@ -110,7 +110,7 @@ class OptionCriticNeuralNetwork(nn.Module):
         Returns:
             _type_: _description_
         """        
-        obs = env.reset()
+        obs, _ = env.reset()
         converted_obs = self.prep_state(obs)
         return converted_obs.shape[1]
     

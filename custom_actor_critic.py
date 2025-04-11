@@ -1,5 +1,5 @@
 # Source: https://github.com/lweitkamp/option-critic-pytorch/blob/master/main.py
-
+# TODO: remove
 import numpy as np
 import argparse
 import torch
@@ -229,7 +229,7 @@ def run(args):
                                                                   reward,
                                                                   done,
                                                                   next_state,
-                                                                  args)
+                                                                  gamma=args.gamma)
             loss = actor_loss + critic_loss
             optim.zero_grad()
             loss.backward()
