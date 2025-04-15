@@ -68,7 +68,7 @@ def generate_phase_data(tf, lanes: list) -> dict:
 
 def generate_meta_data(traffic: str) -> dict:
     meta_data = {}
-    env = utils.create_env(traffic)
+    env = utils.create_env(traffic, reward_fn="pressure")
     for tf_id, tf in env.traffic_signals.items():
         meta_data[tf_id] = {}
         lane_data = generate_lane_dicts(tf)

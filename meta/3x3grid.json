@@ -1,0 +1,722 @@
+{
+    "0": {
+        "lanes": {
+            "incoming": {
+                "0": "0Ni_0",
+                "1": "0Ni_0",
+                "2": "0Ni_1",
+                "3": "0Ni_1",
+                "4": "0Ei_0",
+                "5": "0Ei_0",
+                "6": "0Ei_1",
+                "7": "0Ei_1",
+                "8": "0Si_0",
+                "9": "0Si_0",
+                "10": "0Si_1",
+                "11": "0Si_1",
+                "12": "0Wi_0",
+                "13": "0Wi_0",
+                "14": "0Wi_1",
+                "15": "0Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "0Si_1",
+                "1": "0Ni_0",
+                "2": "0Ei_0",
+                "3": "0Ni_1",
+                "4": "0Si_0",
+                "5": "0Wi_0",
+                "6": "0Wi_1",
+                "7": "0Ei_1"
+            },
+            "outgoing": {
+                "0": "0Wo_0",
+                "1": "1Wi_0",
+                "2": "1Wi_1",
+                "3": "0No_1",
+                "4": "3Ni_0",
+                "5": "0Wo_1",
+                "6": "0No_0",
+                "7": "3Ni_1"
+            },
+            "cleaned_outgoing": {
+                "0": "0Wo_0",
+                "1": "1Wi_0",
+                "2": "1Wi_1",
+                "3": "0No_1",
+                "4": "3Ni_0",
+                "5": "0Wo_1",
+                "6": "0No_0",
+                "7": "3Ni_1"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "0Si_0",
+                    "0Si_1",
+                    "0Ni_0",
+                    "0Ni_1"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "0Ei_1",
+                    "0Wi_1",
+                    "0Ei_0",
+                    "0Wi_0"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    },
+    "1": {
+        "lanes": {
+            "incoming": {
+                "0": "1Ni_0",
+                "1": "1Ni_0",
+                "2": "1Ni_1",
+                "3": "1Ni_1",
+                "4": "1Ei_0",
+                "5": "1Ei_0",
+                "6": "1Ei_1",
+                "7": "1Ei_1",
+                "8": "1Si_0",
+                "9": "1Si_0",
+                "10": "1Si_1",
+                "11": "1Si_1",
+                "12": "1Wi_0",
+                "13": "1Wi_0",
+                "14": "1Wi_1",
+                "15": "1Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "1Si_0",
+                "1": "1Wi_0",
+                "2": "1Wi_1",
+                "3": "1Ei_1",
+                "4": "1Si_1",
+                "5": "1Ni_1",
+                "6": "1Ei_0",
+                "7": "1Ni_0"
+            },
+            "outgoing": {
+                "0": "1No_0",
+                "1": "0Ei_0",
+                "2": "2Wi_1",
+                "3": "4Ni_0",
+                "4": "1No_1",
+                "5": "0Ei_1",
+                "6": "2Wi_0",
+                "7": "4Ni_1"
+            },
+            "cleaned_outgoing": {
+                "0": "1No_0",
+                "1": "0Ei_0",
+                "2": "4Ni_0",
+                "3": "2Wi_1",
+                "4": "1No_1",
+                "5": "0Ei_1",
+                "6": "2Wi_0",
+                "7": "4Ni_1"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "1Ni_1",
+                    "1Si_1",
+                    "1Si_0",
+                    "1Ni_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "1Wi_0",
+                    "1Ei_0",
+                    "1Ei_1",
+                    "1Wi_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    },
+    "2": {
+        "lanes": {
+            "incoming": {
+                "0": "2Ni_0",
+                "1": "2Ni_0",
+                "2": "2Ni_1",
+                "3": "2Ni_1",
+                "4": "2Ei_0",
+                "5": "2Ei_0",
+                "6": "2Ei_1",
+                "7": "2Ei_1",
+                "8": "2Si_0",
+                "9": "2Si_0",
+                "10": "2Si_1",
+                "11": "2Si_1",
+                "12": "2Wi_0",
+                "13": "2Wi_0",
+                "14": "2Wi_1",
+                "15": "2Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "2Si_1",
+                "1": "2Ni_1",
+                "2": "2Ei_0",
+                "3": "2Ei_1",
+                "4": "2Wi_1",
+                "5": "2Si_0",
+                "6": "2Ni_0",
+                "7": "2Wi_0"
+            },
+            "outgoing": {
+                "0": "2Eo_1",
+                "1": "5Ni_1",
+                "2": "2Eo_0",
+                "3": "5Ni_0",
+                "4": "1Ei_1",
+                "5": "1Ei_0",
+                "6": "2No_0",
+                "7": "2No_1"
+            },
+            "cleaned_outgoing": {
+                "0": "2Eo_1",
+                "1": "5Ni_1",
+                "2": "2Eo_0",
+                "3": "5Ni_0",
+                "4": "1Ei_1",
+                "5": "1Ei_0",
+                "6": "2No_0",
+                "7": "2No_1"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "2Ni_1",
+                    "2Si_1",
+                    "2Si_0",
+                    "2Ni_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "2Wi_0",
+                    "2Wi_1",
+                    "2Ei_0",
+                    "2Ei_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    },
+    "3": {
+        "lanes": {
+            "incoming": {
+                "0": "3Ni_0",
+                "1": "3Ni_0",
+                "2": "3Ni_1",
+                "3": "3Ni_1",
+                "4": "3Ei_0",
+                "5": "3Ei_0",
+                "6": "3Ei_1",
+                "7": "3Ei_1",
+                "8": "3Si_0",
+                "9": "3Si_0",
+                "10": "3Si_1",
+                "11": "3Si_1",
+                "12": "3Wi_0",
+                "13": "3Wi_0",
+                "14": "3Wi_1",
+                "15": "3Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "3Ei_1",
+                "1": "3Wi_1",
+                "2": "3Si_1",
+                "3": "3Ni_0",
+                "4": "3Wi_0",
+                "5": "3Si_0",
+                "6": "3Ni_1",
+                "7": "3Ei_0"
+            },
+            "outgoing": {
+                "0": "3Wo_0",
+                "1": "0Si_1",
+                "2": "4Wi_0",
+                "3": "6Ni_0",
+                "4": "0Si_0",
+                "5": "3Wo_1",
+                "6": "4Wi_1",
+                "7": "6Ni_1"
+            },
+            "cleaned_outgoing": {
+                "0": "3Wo_0",
+                "1": "0Si_1",
+                "2": "4Wi_0",
+                "3": "6Ni_0",
+                "4": "0Si_0",
+                "5": "3Wo_1",
+                "6": "4Wi_1",
+                "7": "6Ni_1"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "3Si_0",
+                    "3Ni_1",
+                    "3Ni_0",
+                    "3Si_1"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "3Ei_1",
+                    "3Wi_1",
+                    "3Wi_0",
+                    "3Ei_0"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    },
+    "4": {
+        "lanes": {
+            "incoming": {
+                "0": "4Ni_0",
+                "1": "4Ni_0",
+                "2": "4Ni_1",
+                "3": "4Ni_1",
+                "4": "4Ei_0",
+                "5": "4Ei_0",
+                "6": "4Ei_1",
+                "7": "4Ei_1",
+                "8": "4Si_0",
+                "9": "4Si_0",
+                "10": "4Si_1",
+                "11": "4Si_1",
+                "12": "4Wi_0",
+                "13": "4Wi_0",
+                "14": "4Wi_1",
+                "15": "4Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "4Si_1",
+                "1": "4Si_0",
+                "2": "4Wi_0",
+                "3": "4Ni_0",
+                "4": "4Ei_0",
+                "5": "4Ni_1",
+                "6": "4Wi_1",
+                "7": "4Ei_1"
+            },
+            "outgoing": {
+                "0": "7Ni_1",
+                "1": "1Si_0",
+                "2": "3Ei_1",
+                "3": "5Wi_1",
+                "4": "1Si_1",
+                "5": "5Wi_0",
+                "6": "7Ni_0",
+                "7": "3Ei_0"
+            },
+            "cleaned_outgoing": {
+                "0": "7Ni_1",
+                "1": "1Si_0",
+                "2": "3Ei_1",
+                "3": "5Wi_1",
+                "4": "1Si_1",
+                "5": "5Wi_0",
+                "6": "7Ni_0",
+                "7": "3Ei_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "4Si_1",
+                    "4Ni_1",
+                    "4Si_0",
+                    "4Ni_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "4Ei_0",
+                    "4Wi_0",
+                    "4Wi_1",
+                    "4Ei_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    },
+    "5": {
+        "lanes": {
+            "incoming": {
+                "0": "5Ni_0",
+                "1": "5Ni_0",
+                "2": "5Ni_1",
+                "3": "5Ni_1",
+                "4": "5Ei_0",
+                "5": "5Ei_0",
+                "6": "5Ei_1",
+                "7": "5Ei_1",
+                "8": "5Si_0",
+                "9": "5Si_0",
+                "10": "5Si_1",
+                "11": "5Si_1",
+                "12": "5Wi_0",
+                "13": "5Wi_0",
+                "14": "5Wi_1",
+                "15": "5Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "5Si_1",
+                "1": "5Ni_1",
+                "2": "5Ei_1",
+                "3": "5Ni_0",
+                "4": "5Ei_0",
+                "5": "5Wi_1",
+                "6": "5Wi_0",
+                "7": "5Si_0"
+            },
+            "outgoing": {
+                "0": "2Si_1",
+                "1": "5Eo_0",
+                "2": "5Eo_1",
+                "3": "8Ni_0",
+                "4": "2Si_0",
+                "5": "4Ei_0",
+                "6": "8Ni_1",
+                "7": "4Ei_1"
+            },
+            "cleaned_outgoing": {
+                "0": "2Si_1",
+                "1": "5Eo_0",
+                "2": "5Eo_1",
+                "3": "4Ei_0",
+                "4": "2Si_0",
+                "5": "8Ni_0",
+                "6": "8Ni_1",
+                "7": "4Ei_1"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "5Si_0",
+                    "5Ni_1",
+                    "5Si_1",
+                    "5Ni_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "5Ei_0",
+                    "5Wi_1",
+                    "5Ei_1",
+                    "5Wi_0"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    },
+    "6": {
+        "lanes": {
+            "incoming": {
+                "0": "6Ni_0",
+                "1": "6Ni_0",
+                "2": "6Ni_1",
+                "3": "6Ni_1",
+                "4": "6Ei_0",
+                "5": "6Ei_0",
+                "6": "6Ei_1",
+                "7": "6Ei_1",
+                "8": "6Si_0",
+                "9": "6Si_0",
+                "10": "6Si_1",
+                "11": "6Si_1",
+                "12": "6Wi_0",
+                "13": "6Wi_0",
+                "14": "6Wi_1",
+                "15": "6Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "6Ni_1",
+                "1": "6Wi_0",
+                "2": "6Ni_0",
+                "3": "6Wi_1",
+                "4": "6Si_0",
+                "5": "6Ei_0",
+                "6": "6Ei_1",
+                "7": "6Si_1"
+            },
+            "outgoing": {
+                "0": "6So_1",
+                "1": "6Wo_1",
+                "2": "7Wi_0",
+                "3": "7Wi_1",
+                "4": "6Wo_0",
+                "5": "6So_0",
+                "6": "3Si_0",
+                "7": "3Si_1"
+            },
+            "cleaned_outgoing": {
+                "0": "6So_1",
+                "1": "6Wo_1",
+                "2": "7Wi_0",
+                "3": "7Wi_1",
+                "4": "6Wo_0",
+                "5": "6So_0",
+                "6": "3Si_0",
+                "7": "3Si_1"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "6Ni_0",
+                    "6Ni_1",
+                    "6Si_1",
+                    "6Si_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "6Wi_0",
+                    "6Ei_0",
+                    "6Ei_1",
+                    "6Wi_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    },
+    "7": {
+        "lanes": {
+            "incoming": {
+                "0": "7Ni_0",
+                "1": "7Ni_0",
+                "2": "7Ni_1",
+                "3": "7Ni_1",
+                "4": "7Ei_0",
+                "5": "7Ei_0",
+                "6": "7Ei_1",
+                "7": "7Ei_1",
+                "8": "7Si_0",
+                "9": "7Si_0",
+                "10": "7Si_1",
+                "11": "7Si_1",
+                "12": "7Wi_0",
+                "13": "7Wi_0",
+                "14": "7Wi_1",
+                "15": "7Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "7Ni_1",
+                "1": "7Si_0",
+                "2": "7Si_1",
+                "3": "7Wi_0",
+                "4": "7Wi_1",
+                "5": "7Ei_1",
+                "6": "7Ei_0",
+                "7": "7Ni_0"
+            },
+            "outgoing": {
+                "0": "4Si_1",
+                "1": "7So_1",
+                "2": "4Si_0",
+                "3": "8Wi_1",
+                "4": "8Wi_0",
+                "5": "7So_0",
+                "6": "6Ei_0",
+                "7": "6Ei_1"
+            },
+            "cleaned_outgoing": {
+                "0": "4Si_1",
+                "1": "7So_1",
+                "2": "4Si_0",
+                "3": "8Wi_1",
+                "4": "8Wi_0",
+                "5": "7So_0",
+                "6": "6Ei_0",
+                "7": "6Ei_1"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "7Ni_0",
+                    "7Si_1",
+                    "7Ni_1",
+                    "7Si_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "7Ei_0",
+                    "7Wi_0",
+                    "7Wi_1",
+                    "7Ei_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    },
+    "8": {
+        "lanes": {
+            "incoming": {
+                "0": "8Ni_0",
+                "1": "8Ni_0",
+                "2": "8Ni_1",
+                "3": "8Ni_1",
+                "4": "8Ei_0",
+                "5": "8Ei_0",
+                "6": "8Ei_1",
+                "7": "8Ei_1",
+                "8": "8Si_0",
+                "9": "8Si_0",
+                "10": "8Si_1",
+                "11": "8Si_1",
+                "12": "8Wi_0",
+                "13": "8Wi_0",
+                "14": "8Wi_1",
+                "15": "8Wi_1"
+            },
+            "cleaned_incoming": {
+                "0": "8Ei_0",
+                "1": "8Si_1",
+                "2": "8Si_0",
+                "3": "8Ei_1",
+                "4": "8Wi_1",
+                "5": "8Wi_0",
+                "6": "8Ni_0",
+                "7": "8Ni_1"
+            },
+            "outgoing": {
+                "0": "5Si_1",
+                "1": "8Eo_0",
+                "2": "7Ei_1",
+                "3": "7Ei_0",
+                "4": "8So_0",
+                "5": "5Si_0",
+                "6": "8So_1",
+                "7": "8Eo_1"
+            },
+            "cleaned_outgoing": {
+                "0": "5Si_1",
+                "1": "8Eo_0",
+                "2": "7Ei_1",
+                "3": "7Ei_0",
+                "4": "8So_0",
+                "5": "5Si_0",
+                "6": "8So_1",
+                "7": "8Eo_1"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GGGgrrrrGGGgrrrr",
+                "lanes_green": [
+                    "8Ni_0",
+                    "8Ni_1",
+                    "8Si_1",
+                    "8Si_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YYYYrrrrYYYYrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rrrrGGGgrrrrGGGg",
+                "lanes_green": [
+                    "8Ei_0",
+                    "8Wi_0",
+                    "8Wi_1",
+                    "8Ei_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rrrrYYYYrrrrYYYY",
+                "lanes_green": []
+            }
+        }
+    }
+}

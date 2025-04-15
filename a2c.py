@@ -5,10 +5,12 @@ import operator
 
 from sumo_rl import SumoEnvironment
 import gymnasium as gym
+from gymnasium.wrappers import FlattenObservation
 
 # import supersuit as ss
 import stable_baselines3
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv
 
 # from wandb.integration.sb3 import WandbCallback
 
@@ -16,7 +18,7 @@ from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3.common.callbacks import CheckpointCallback
 import argparse
 
-from sumo_rl_environment.custom_env import CustomSumoEnvironment
+from sumo_rl_environment.custom_env import CustomSumoEnvironment, BrokenLightEnvironment
 
 from configs import ROUTE_SETTINGS
 from utils.utils import DictToFlatActionWrapper
@@ -36,8 +38,9 @@ def setup_env(traffic: str, reward_fn: str, reward_weights: dict = {}):
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
     duration = end_time - start_time
+
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = CustomSumoEnvironment(
+    env = BrokenLightEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
         # single_agent=True,
@@ -47,14 +50,19 @@ def setup_env(traffic: str, reward_fn: str, reward_weights: dict = {}):
         intelli_light_weight=reward_weights,
     )
     print("Environment created")
-    return DictToFlatActionWrapper(env) 
+    env = Monitor(env)  # TODO: 
+
+    env = DictToFlatActionWrapper(env) 
+    # env = FlattenObservation(env)
+    print(env.action_space, env.observation_space)
+    return env
 
 
 def train(env, traffic: str, steps: int = 30000):    
-    experiment_name = f"a2c_{traffic}_{steps}_steps"
+    experiment_name = f"a2c_broken_{traffic}_{steps}_steps"
 
-    env = Monitor(env)
 
+    # env = DummyVecEnv([lambda: env])
     env.reset()
 
     agent = stable_baselines3.A2C(
@@ -69,19 +77,30 @@ def train(env, traffic: str, steps: int = 30000):
     agent.save(f"models/{experiment_name}.zip")
     return agent
 
+# def main():
+#     # training_steps = 50000
+#     training_steps = 100000
+#     traffic_low = "custom-2way-single-intersection-low"
+#     traffic_high = "custom-2way-single-intersection-high"
+    
+#     weights = {"delay": 3, "waiting_time": 3, "light_switches": 2}
+    
+#     env_low = setup_env(traffic_low, "intelli_light_reward", reward_weights=weights)
+#     agent_low = train(env_low, traffic_low, training_steps)
+
+#     env_high = setup_env(traffic_high, "intelli_light_reward", reward_weights=weights)
+#     agent_high = train(env_high, traffic_high, training_steps)
+
 def main():
     # training_steps = 50000
-    training_steps = 100000
-    traffic_low = "custom-2way-single-intersection-low"
-    traffic_high = "custom-2way-single-intersection-high"
+    training_steps = 250000
+    traffic = "3x3grid"
+    # traffic = "custom-2way-single-intersection"
     
     weights = {"delay": 3, "waiting_time": 3, "light_switches": 2}
     
-    env_low = setup_env(traffic_low, "intelli_light_reward", reward_weights=weights)
-    agent_low = train(env_low, traffic_low, training_steps)
-
-    env_high = setup_env(traffic_high, "intelli_light_reward", reward_weights=weights)
-    agent_high = train(env_high, traffic_high, training_steps)
+    env = setup_env(traffic, "intelli_light_reward", reward_weights=weights)
+    train(env, traffic, training_steps)
 
 if __name__ == "__main__":
     main()

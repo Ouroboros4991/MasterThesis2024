@@ -29,6 +29,8 @@ class CustomTrafficSignal(TrafficSignal):
         self.intelli_light_weight = intelli_light_weight
         
         self.prev_car_incoming = {}
+        
+        self.red_state = "r" * len(self.green_phases[0].state)
     
     def update(self):
         super().update()
@@ -38,6 +40,31 @@ class CustomTrafficSignal(TrafficSignal):
             self.phases_changes[self.current_freq_phase].append(self.steps_in_current_phase)
             self.current_freq_phase = self.green_phase
             self.steps_in_current_phase = 0
+    
+    
+    def set_next_phase(self, new_phase: int):
+        """Sets what will be the next green phase and sets yellow phase if the next phase is different than the current.
+
+        Args:
+            new_phase (int): Number between [0 ... num_green_phases]
+        """
+        new_phase = int(new_phase)
+        if new_phase == -1:
+            self.sumo.trafficlight.setRedYellowGreenState(self.id, self.red_state)
+            self.next_action_time = self.env.sim_step + self.delta_time
+        elif self.green_phase == new_phase or self.time_since_last_phase_change < self.yellow_time + self.min_green:
+            # self.sumo.trafficlight.setPhase(self.id, self.green_phase)
+            self.sumo.trafficlight.setRedYellowGreenState(self.id, self.all_phases[self.green_phase].state)
+            self.next_action_time = self.env.sim_step + self.delta_time
+        else:
+            # self.sumo.trafficlight.setPhase(self.id, self.yellow_dict[(self.green_phase, new_phase)])  # turns yellow
+            self.sumo.trafficlight.setRedYellowGreenState(
+                self.id, self.all_phases[self.yellow_dict[(self.green_phase, new_phase)]].state
+            )
+            self.green_phase = new_phase
+            self.next_action_time = self.env.sim_step + self.delta_time
+            self.is_yellow = True
+            self.time_since_last_phase_change = 0
 
 
     def waiting_time_per_lane(self):
@@ -132,7 +159,6 @@ class CustomTrafficSignal(TrafficSignal):
                     cars_left += 1
             self.prev_car_incoming[lane] = veh_list
         return cars_left
-    
     
     def custom_reward(self):
         """Custom reward function that uses the pressure reward as a benchmark

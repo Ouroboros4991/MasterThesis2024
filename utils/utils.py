@@ -11,7 +11,7 @@ from agents import option_critic_classification
 from agents import actor_critic_agent
 import stable_baselines3
 
-from sumo_rl_environment.custom_env import CustomSumoEnvironment
+from sumo_rl_environment.custom_env import CustomSumoEnvironment, BrokenLightEnvironment
 from configs import ROUTE_SETTINGS
 
 import gymnasium as gym

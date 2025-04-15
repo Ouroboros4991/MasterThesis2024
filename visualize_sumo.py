@@ -9,7 +9,7 @@ import torch
 
 from agents.option_critic_utils import to_tensor
 from configs import ROUTE_SETTINGS
-from sumo_rl_environment.custom_env import CustomSumoEnvironment
+from sumo_rl_environment.custom_env import CustomSumoEnvironment, BrokenLightEnvironment
 from utils import utils
 
 def visualize(traffic: str, model: str):
@@ -18,7 +18,7 @@ def visualize(traffic: str, model: str):
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
     duration = end_time - start_time
-    env = CustomSumoEnvironment(
+    env = BrokenLightEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
         use_gui=True,
@@ -46,12 +46,7 @@ def visualize(traffic: str, model: str):
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
             action_dict = agent.convert_action_to_dict(action)
-        try:
-            # env.env.sumo.vehicle.getLaneID is 0 if the vehicle is not in a lane yet
-            print(env.env.sim_step, env.env.sumo.vehicle.getLaneID("emergency_0"), env.env.sumo.vehicle.getAccumulatedWaitingTime("emergency_0"))
-        except Exception as e:
-            print(e)
-            pass
+        print(action_dict)
 
         obs, reward, terminate, truncated, info = env.step(action_dict)
 
