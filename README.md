@@ -27,3 +27,20 @@ TODO: remove default as it does not take into account the delay caused by the ye
 
 # References
 https://github.com/lweitkamp/option-critic-pytorch 
+
+
+
+# Command used to generate 3x3 grid
+
+
+python $SUMO_HOME/tools/randomTrips.py \
+  -n 3x3Grid2lanes.net.xml \
+  -o 3x3Grid2lanes.trips.xml \
+  -b 0 -e 3600 \
+  -p 2 \
+  --random
+
+duarouter \
+  -n 3x3Grid2lanes.net.xml \
+  -t 3x3Grid2lanes.trips.xml \
+  -o 3x3Grid2lanes.rou.xml

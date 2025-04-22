@@ -18,14 +18,15 @@ def visualize(traffic: str, model: str):
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
     duration = end_time - start_time
-    env = BrokenLightEnvironment(
+    env = CustomSumoEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
         use_gui=True,
         begin_time=start_time,
         num_seconds=duration,
     )
-    env = utils.DictToFlatActionWrapper(env)
+    if model.startswith("a2c"):
+        env = utils.DictToFlatActionWrapper(env)
     obs, _ = env.reset()
 
     agent = utils.load_model(model, env)
@@ -46,8 +47,6 @@ def visualize(traffic: str, model: str):
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
             action_dict = agent.convert_action_to_dict(action)
-        print(action_dict)
-
         obs, reward, terminate, truncated, info = env.step(action_dict)
 
 if __name__ == "__main__":

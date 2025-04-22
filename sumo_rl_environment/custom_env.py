@@ -174,7 +174,7 @@ class CustomSumoEnvironment(SumoEnvironment):
             add_system_info=True,
             observation_class=CustomObservationFunction,
             use_gui=use_gui,
-            additional_sumo_cmd='--tripinfo-output',
+            additional_sumo_cmd='--tripinfo-output', # TODO: double check to add --device.rerouting.probability 1 --device.rerouting.period 60 --device.rerouting.adaptation-interval 1
             # out_csv_name=out_csv_name,
             # reward_fn=custom_reward_function,
             # reward_fn=queue_based_reward_function,

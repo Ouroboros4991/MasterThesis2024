@@ -27,8 +27,9 @@ class CyclicAgent:
             n_phases = ts_config["number_phases"]
             currently_green = []
             for i in range(n_phases):
-                current_phase = i * 4
-                currently_green.append(observation[ts_id][current_phase])
+                # current_phase = i * 4
+                phase_to_check = i
+                currently_green.append(observation[ts_id][phase_to_check])
             # currently_green = observation[ts_id][0:n_phases]
             # only update the phase if we're in a green phase
             # This to avoid skipping phases because of the yellow phase
@@ -38,4 +39,5 @@ class CyclicAgent:
                     ts_config["time_in_phase"] = 0
                     ts_config["current_phase"] = (ts_config["current_phase"] + 1) % n_phases
             action[ts_id] = ts_config["current_phase"]
+        print("TESTING", action)
         return action, None
