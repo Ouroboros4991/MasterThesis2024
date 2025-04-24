@@ -163,6 +163,19 @@ class CustomSumoEnvironment(SumoEnvironment):
         }
         if not reward_fn:
             reward_fn = "intelli_light_reward"
+        
+        additional_sumo_cmd = [
+            # "--device.rerouting.probability 1.0",
+            # "--device.rerouting.period 60",
+            # "--device.rerouting.adaptation-interval 10",
+            # "--device.rerouting.adaptation-weight 0.2",
+            "--tripinfo-output",
+        ]
+        # additional_sumo_cmd = "--tripinfo-output " \
+        #       "--device.rerouting.probability 1.0 " \
+        #       "--device.rerouting.period 60 " \
+        #       "--device.rerouting.adaptation-interval 10 " \
+        #       "--device.rerouting.adaptation-weight 0.2"
 
         self.super_init(
             net_file=net_file,
@@ -174,7 +187,7 @@ class CustomSumoEnvironment(SumoEnvironment):
             add_system_info=True,
             observation_class=CustomObservationFunction,
             use_gui=use_gui,
-            additional_sumo_cmd='--tripinfo-output', # TODO: double check to add --device.rerouting.probability 1 --device.rerouting.period 60 --device.rerouting.adaptation-interval 1
+            additional_sumo_cmd=additional_sumo_cmd,
             # out_csv_name=out_csv_name,
             # reward_fn=custom_reward_function,
             # reward_fn=queue_based_reward_function,
@@ -184,6 +197,58 @@ class CustomSumoEnvironment(SumoEnvironment):
             intelli_light_weight=intelli_light_weight,
         )
         self.num_seconds = num_seconds
+    
+    def _start_simulation(self):
+        sumo_cmd = [
+            self._sumo_binary,
+            "-n",
+            self._net,
+            "-r",
+            self._route,
+            "--max-depart-delay",
+            str(self.max_depart_delay),
+            "--waiting-time-memory",
+            str(self.waiting_time_memory),
+            "--time-to-teleport",
+            str(self.time_to_teleport),
+        ]
+        if self.begin_time > 0:
+            sumo_cmd.append(f"-b {self.begin_time}")
+        if self.sumo_seed == "random":
+            sumo_cmd.append("--random")
+        else:
+            sumo_cmd.extend(["--seed", str(self.sumo_seed)])
+        if not self.sumo_warnings:
+            sumo_cmd.append("--no-warnings")
+        if self.additional_sumo_cmd is not None:
+            if isinstance(self.additional_sumo_cmd, str):
+                sumo_cmd.extend(self.additional_sumo_cmd.split())
+            elif isinstance(self.additional_sumo_cmd, list):
+                sumo_cmd.extend(self.additional_sumo_cmd)
+            else:
+                raise ValueError("additional_sumo_cmd must be a string or a list of strings.")
+        if self.use_gui or self.render_mode is not None:
+            sumo_cmd.extend(["--start", "--quit-on-end"])
+            if self.render_mode == "rgb_array":
+                sumo_cmd.extend(["--window-size", f"{self.virtual_display[0]},{self.virtual_display[1]}"])
+                from pyvirtualdisplay.smartdisplay import SmartDisplay
+
+                print("Creating a virtual display.")
+                self.disp = SmartDisplay(size=self.virtual_display)
+                self.disp.start()
+                print("Virtual display started.")
+
+        if LIBSUMO:
+            traci.start(sumo_cmd)
+            self.sumo = traci
+        else:
+            traci.start(sumo_cmd, label=self.label)
+            self.sumo = traci.getConnection(self.label)
+
+        if self.use_gui or self.render_mode is not None:
+            if "DEFAULT_VIEW" not in dir(traci.gui):  # traci.gui.DEFAULT_VIEW is not defined in libsumo
+                traci.gui.DEFAULT_VIEW = "View #0"
+            self.sumo.gui.setSchema(traci.gui.DEFAULT_VIEW, "real world")
     
     
     def step(self, action: Union[dict, int]):
@@ -289,6 +354,19 @@ class CustomSumoEnvironment(SumoEnvironment):
 
 class BrokenLightEnvironment(CustomSumoEnvironment):
     
+    def __init__(self, broken_light_start: int=0, broken_light_end: int=0, *args, **kwargs):
+        """Initialize the environment with a broken traffic light.
+
+        Args:
+            broken_light_start (int): time when the traffic light is broken.
+            broken_light_end (int): time when the traffic light is fixed.
+        """
+        super().__init__(*args, **kwargs)
+        self.broken_light_start = broken_light_start
+        self.broken_light_end = broken_light_end
+        self.broken_light_id = None
+        
+    
     def step(self, action: Union[dict, int]):
         """Apply the action(s) and then step the simulation for delta_time seconds.
 
@@ -296,9 +374,14 @@ class BrokenLightEnvironment(CustomSumoEnvironment):
             action (Union[dict, int]): action(s) to be applied to the environment.
             If single_agent is True, action is an int, otherwise it expects a dict with keys corresponding to traffic signal ids.
         """
+        if not self.broken_light_id:
+            tf_ids = list(action.keys())
+            middle = (len(tf_ids)-1) // 2
+            self.broken_light_id = tf_ids[middle]
+            print(f"Broken light id: {self.broken_light_id}")
         # Override the actions to keep 1 stop light on red as if the junction was blocked
         # TODO: update the logic so that this junction is only blocked for a certain amount of time
-        action['4'] = -1
+        action[self.broken_light_id ] = -1
         
         
         observations, reward, terminated, truncated, info = super().step(action)

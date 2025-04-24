@@ -212,11 +212,14 @@ def multiple_episodes(env, agent, prefix, n_episodes: int=100, save: bool=True):
     return results
 
 
-def main(traffic: str, model: str):
-    env = utils.create_env(traffic, reward_fn="pressure")
+def main(traffic: str, model: str, broken: bool = False):
+    env = utils.create_env(traffic, reward_fn="pressure", broken=broken)
     if model.startswith("a2c"):
         env = utils.DictToFlatActionWrapper(env)
-    prefix = f"{model}_{traffic}"
+    if broken:
+        prefix = f"{model}_broken_{traffic}"
+    else:
+        prefix = f"{model}_{traffic}"
     agent = utils.load_model(model, env)
     single_episodes(env, agent, prefix)
     multiple_episodes(env, agent, prefix)
@@ -234,6 +237,9 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--traffic',
                         choices=possible_scenarios,
                         required=True) 
+    parser.add_argument('-b', '--broken',
+                        action='store_true',
+                        help='Use broken traffic lights')
     args = parser.parse_args()
 
     if args.traffic == 'all':
@@ -243,5 +249,5 @@ if __name__ == "__main__":
         # for scenario in ROUTE_SETTINGS.keys():
             main(scenario, args.model)
     else:
-        main(args.traffic, args.model)
+        main(args.traffic, args.model, args.broken)
             

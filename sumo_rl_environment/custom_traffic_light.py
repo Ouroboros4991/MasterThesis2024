@@ -49,8 +49,6 @@ class CustomTrafficSignal(TrafficSignal):
             new_phase (int): Number between [0 ... num_green_phases]
         """
         new_phase = int(new_phase)
-        print(self.id, new_phase)
-        print(self.yellow_dict)
         if new_phase == -1:
             self.sumo.trafficlight.setRedYellowGreenState(self.id, self.red_state)
             self.next_action_time = self.env.sim_step + self.delta_time

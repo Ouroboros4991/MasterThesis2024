@@ -1,0 +1,1010 @@
+{
+    "A0": {
+        "lanes": {
+            "incoming": {
+                "0": "A1A0.50.00_0",
+                "1": "A1A0.50.00_1",
+                "2": "A1A0.50.00_2",
+                "3": "B0A0.50.00_0",
+                "4": "B0A0.50.00_1",
+                "5": "B0A0.50.00_2",
+                "6": "bottom0A0.50.00_0",
+                "7": "bottom0A0.50.00_1",
+                "8": "bottom0A0.50.00_2",
+                "9": "left0A0.50.00_0",
+                "10": "left0A0.50.00_1",
+                "11": "left0A0.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "B0A0.50.00_0",
+                "1": "B0A0.50.00_2",
+                "2": "bottom0A0.50.00_1",
+                "3": "A1A0.50.00_0",
+                "4": "B0A0.50.00_1",
+                "5": "bottom0A0.50.00_2",
+                "6": "left0A0.50.00_0",
+                "7": "A1A0.50.00_2",
+                "8": "left0A0.50.00_1",
+                "9": "bottom0A0.50.00_0",
+                "10": "A1A0.50.00_1",
+                "11": "left0A0.50.00_2"
+            },
+            "outgoing": {
+                "0": "A0left0_0",
+                "1": "A0A1_0",
+                "2": "A0B0_0",
+                "3": "A0bottom0_0"
+            },
+            "cleaned_outgoing": {
+                "0": "A0left0_0",
+                "1": "A0A1_0",
+                "2": "A0B0_0",
+                "3": "A0bottom0_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "bottom0A0.50.00_0",
+                    "A1A0.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "A1A0.50.00_1",
+                    "bottom0A0.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "bottom0A0.50.00_2",
+                    "A1A0.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "B0A0.50.00_0",
+                    "left0A0.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "left0A0.50.00_1",
+                    "B0A0.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "B0A0.50.00_2",
+                    "left0A0.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    },
+    "A1": {
+        "lanes": {
+            "incoming": {
+                "0": "A2A1.50.00_0",
+                "1": "A2A1.50.00_1",
+                "2": "A2A1.50.00_2",
+                "3": "B1A1.50.00_0",
+                "4": "B1A1.50.00_1",
+                "5": "B1A1.50.00_2",
+                "6": "A0A1.50.00_0",
+                "7": "A0A1.50.00_1",
+                "8": "A0A1.50.00_2",
+                "9": "left1A1.50.00_0",
+                "10": "left1A1.50.00_1",
+                "11": "left1A1.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "A0A1.50.00_1",
+                "1": "A2A1.50.00_2",
+                "2": "A2A1.50.00_1",
+                "3": "B1A1.50.00_2",
+                "4": "A0A1.50.00_0",
+                "5": "left1A1.50.00_1",
+                "6": "left1A1.50.00_2",
+                "7": "A2A1.50.00_0",
+                "8": "B1A1.50.00_1",
+                "9": "B1A1.50.00_0",
+                "10": "left1A1.50.00_0",
+                "11": "A0A1.50.00_2"
+            },
+            "outgoing": {
+                "0": "A1A2_0",
+                "1": "A1B1_0",
+                "2": "A1left1_0",
+                "3": "A1A0_0"
+            },
+            "cleaned_outgoing": {
+                "0": "A1A2_0",
+                "1": "A1B1_0",
+                "2": "A1left1_0",
+                "3": "A1A0_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "A0A1.50.00_0",
+                    "A2A1.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "A0A1.50.00_1",
+                    "A2A1.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "A2A1.50.00_2",
+                    "A0A1.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "left1A1.50.00_0",
+                    "B1A1.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "B1A1.50.00_1",
+                    "left1A1.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "B1A1.50.00_2",
+                    "left1A1.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    },
+    "A2": {
+        "lanes": {
+            "incoming": {
+                "0": "top0A2.50.00_0",
+                "1": "top0A2.50.00_1",
+                "2": "top0A2.50.00_2",
+                "3": "B2A2.50.00_0",
+                "4": "B2A2.50.00_1",
+                "5": "B2A2.50.00_2",
+                "6": "A1A2.50.00_0",
+                "7": "A1A2.50.00_1",
+                "8": "A1A2.50.00_2",
+                "9": "left2A2.50.00_0",
+                "10": "left2A2.50.00_1",
+                "11": "left2A2.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "B2A2.50.00_1",
+                "1": "left2A2.50.00_2",
+                "2": "B2A2.50.00_2",
+                "3": "A1A2.50.00_2",
+                "4": "left2A2.50.00_1",
+                "5": "top0A2.50.00_2",
+                "6": "B2A2.50.00_0",
+                "7": "A1A2.50.00_0",
+                "8": "left2A2.50.00_0",
+                "9": "top0A2.50.00_0",
+                "10": "top0A2.50.00_1",
+                "11": "A1A2.50.00_1"
+            },
+            "outgoing": {
+                "0": "A2top0_0",
+                "1": "A2A1_0",
+                "2": "A2left2_0",
+                "3": "A2B2_0"
+            },
+            "cleaned_outgoing": {
+                "0": "A2top0_0",
+                "1": "A2A1_0",
+                "2": "A2left2_0",
+                "3": "A2B2_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "top0A2.50.00_0",
+                    "A1A2.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "top0A2.50.00_1",
+                    "A1A2.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "A1A2.50.00_2",
+                    "top0A2.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "B2A2.50.00_0",
+                    "left2A2.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "left2A2.50.00_1",
+                    "B2A2.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "left2A2.50.00_2",
+                    "B2A2.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    },
+    "B0": {
+        "lanes": {
+            "incoming": {
+                "0": "B1B0.50.00_0",
+                "1": "B1B0.50.00_1",
+                "2": "B1B0.50.00_2",
+                "3": "C0B0.50.00_0",
+                "4": "C0B0.50.00_1",
+                "5": "C0B0.50.00_2",
+                "6": "bottom1B0.50.00_0",
+                "7": "bottom1B0.50.00_1",
+                "8": "bottom1B0.50.00_2",
+                "9": "A0B0.50.00_0",
+                "10": "A0B0.50.00_1",
+                "11": "A0B0.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "bottom1B0.50.00_1",
+                "1": "A0B0.50.00_0",
+                "2": "B1B0.50.00_0",
+                "3": "B1B0.50.00_2",
+                "4": "C0B0.50.00_2",
+                "5": "bottom1B0.50.00_2",
+                "6": "bottom1B0.50.00_0",
+                "7": "B1B0.50.00_1",
+                "8": "C0B0.50.00_1",
+                "9": "A0B0.50.00_1",
+                "10": "A0B0.50.00_2",
+                "11": "C0B0.50.00_0"
+            },
+            "outgoing": {
+                "0": "B0C0_0",
+                "1": "B0B1_0",
+                "2": "B0A0_0",
+                "3": "B0bottom1_0"
+            },
+            "cleaned_outgoing": {
+                "0": "B0A0_0",
+                "1": "B0C0_0",
+                "2": "B0bottom1_0",
+                "3": "B0B1_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "B1B0.50.00_0",
+                    "bottom1B0.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "B1B0.50.00_1",
+                    "bottom1B0.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "bottom1B0.50.00_2",
+                    "B1B0.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "A0B0.50.00_0",
+                    "C0B0.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "C0B0.50.00_1",
+                    "A0B0.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "C0B0.50.00_2",
+                    "A0B0.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    },
+    "B1": {
+        "lanes": {
+            "incoming": {
+                "0": "B2B1.50.00_0",
+                "1": "B2B1.50.00_1",
+                "2": "B2B1.50.00_2",
+                "3": "C1B1.50.00_0",
+                "4": "C1B1.50.00_1",
+                "5": "C1B1.50.00_2",
+                "6": "B0B1.50.00_0",
+                "7": "B0B1.50.00_1",
+                "8": "B0B1.50.00_2",
+                "9": "A1B1.50.00_0",
+                "10": "A1B1.50.00_1",
+                "11": "A1B1.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "B0B1.50.00_0",
+                "1": "A1B1.50.00_1",
+                "2": "B2B1.50.00_0",
+                "3": "B0B1.50.00_1",
+                "4": "B2B1.50.00_2",
+                "5": "A1B1.50.00_2",
+                "6": "C1B1.50.00_0",
+                "7": "C1B1.50.00_1",
+                "8": "B0B1.50.00_2",
+                "9": "C1B1.50.00_2",
+                "10": "A1B1.50.00_0",
+                "11": "B2B1.50.00_1"
+            },
+            "outgoing": {
+                "0": "B1A1_0",
+                "1": "B1B0_0",
+                "2": "B1B2_0",
+                "3": "B1C1_0"
+            },
+            "cleaned_outgoing": {
+                "0": "B1A1_0",
+                "1": "B1B0_0",
+                "2": "B1B2_0",
+                "3": "B1C1_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "B2B1.50.00_0",
+                    "B0B1.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "B2B1.50.00_1",
+                    "B0B1.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "B2B1.50.00_2",
+                    "B0B1.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "A1B1.50.00_0",
+                    "C1B1.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "A1B1.50.00_1",
+                    "C1B1.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "C1B1.50.00_2",
+                    "A1B1.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    },
+    "B2": {
+        "lanes": {
+            "incoming": {
+                "0": "top1B2.50.00_0",
+                "1": "top1B2.50.00_1",
+                "2": "top1B2.50.00_2",
+                "3": "C2B2.50.00_0",
+                "4": "C2B2.50.00_1",
+                "5": "C2B2.50.00_2",
+                "6": "B1B2.50.00_0",
+                "7": "B1B2.50.00_1",
+                "8": "B1B2.50.00_2",
+                "9": "A2B2.50.00_0",
+                "10": "A2B2.50.00_1",
+                "11": "A2B2.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "A2B2.50.00_2",
+                "1": "C2B2.50.00_1",
+                "2": "top1B2.50.00_1",
+                "3": "C2B2.50.00_0",
+                "4": "top1B2.50.00_2",
+                "5": "C2B2.50.00_2",
+                "6": "B1B2.50.00_1",
+                "7": "B1B2.50.00_2",
+                "8": "A2B2.50.00_0",
+                "9": "B1B2.50.00_0",
+                "10": "top1B2.50.00_0",
+                "11": "A2B2.50.00_1"
+            },
+            "outgoing": {
+                "0": "B2A2_0",
+                "1": "B2C2_0",
+                "2": "B2top1_0",
+                "3": "B2B1_0"
+            },
+            "cleaned_outgoing": {
+                "0": "B2A2_0",
+                "1": "B2C2_0",
+                "2": "B2top1_0",
+                "3": "B2B1_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "B1B2.50.00_0",
+                    "top1B2.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "B1B2.50.00_1",
+                    "top1B2.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "top1B2.50.00_2",
+                    "B1B2.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "A2B2.50.00_0",
+                    "C2B2.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "A2B2.50.00_1",
+                    "C2B2.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "C2B2.50.00_2",
+                    "A2B2.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    },
+    "C0": {
+        "lanes": {
+            "incoming": {
+                "0": "C1C0.50.00_0",
+                "1": "C1C0.50.00_1",
+                "2": "C1C0.50.00_2",
+                "3": "right0C0.50.00_0",
+                "4": "right0C0.50.00_1",
+                "5": "right0C0.50.00_2",
+                "6": "bottom2C0.50.00_0",
+                "7": "bottom2C0.50.00_1",
+                "8": "bottom2C0.50.00_2",
+                "9": "B0C0.50.00_0",
+                "10": "B0C0.50.00_1",
+                "11": "B0C0.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "C1C0.50.00_2",
+                "1": "bottom2C0.50.00_2",
+                "2": "right0C0.50.00_0",
+                "3": "B0C0.50.00_2",
+                "4": "C1C0.50.00_1",
+                "5": "bottom2C0.50.00_1",
+                "6": "right0C0.50.00_2",
+                "7": "bottom2C0.50.00_0",
+                "8": "B0C0.50.00_0",
+                "9": "B0C0.50.00_1",
+                "10": "C1C0.50.00_0",
+                "11": "right0C0.50.00_1"
+            },
+            "outgoing": {
+                "0": "C0bottom2_0",
+                "1": "C0C1_0",
+                "2": "C0right0_0",
+                "3": "C0B0_0"
+            },
+            "cleaned_outgoing": {
+                "0": "C0bottom2_0",
+                "1": "C0C1_0",
+                "2": "C0right0_0",
+                "3": "C0B0_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "bottom2C0.50.00_0",
+                    "C1C0.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "C1C0.50.00_1",
+                    "bottom2C0.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "C1C0.50.00_2",
+                    "bottom2C0.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "B0C0.50.00_0",
+                    "right0C0.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "B0C0.50.00_1",
+                    "right0C0.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "B0C0.50.00_2",
+                    "right0C0.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    },
+    "C1": {
+        "lanes": {
+            "incoming": {
+                "0": "C2C1.50.00_0",
+                "1": "C2C1.50.00_1",
+                "2": "C2C1.50.00_2",
+                "3": "right1C1.50.00_0",
+                "4": "right1C1.50.00_1",
+                "5": "right1C1.50.00_2",
+                "6": "C0C1.50.00_0",
+                "7": "C0C1.50.00_1",
+                "8": "C0C1.50.00_2",
+                "9": "B1C1.50.00_0",
+                "10": "B1C1.50.00_1",
+                "11": "B1C1.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "C2C1.50.00_0",
+                "1": "B1C1.50.00_2",
+                "2": "right1C1.50.00_1",
+                "3": "C0C1.50.00_1",
+                "4": "C2C1.50.00_1",
+                "5": "right1C1.50.00_0",
+                "6": "right1C1.50.00_2",
+                "7": "C0C1.50.00_0",
+                "8": "B1C1.50.00_1",
+                "9": "B1C1.50.00_0",
+                "10": "C0C1.50.00_2",
+                "11": "C2C1.50.00_2"
+            },
+            "outgoing": {
+                "0": "C1B1_0",
+                "1": "C1C0_0",
+                "2": "C1C2_0",
+                "3": "C1right1_0"
+            },
+            "cleaned_outgoing": {
+                "0": "C1B1_0",
+                "1": "C1C0_0",
+                "2": "C1C2_0",
+                "3": "C1right1_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "C2C1.50.00_0",
+                    "C0C1.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "C0C1.50.00_1",
+                    "C2C1.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "C0C1.50.00_2",
+                    "C2C1.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "B1C1.50.00_0",
+                    "right1C1.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "B1C1.50.00_1",
+                    "right1C1.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "right1C1.50.00_2",
+                    "B1C1.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    },
+    "C2": {
+        "lanes": {
+            "incoming": {
+                "0": "top2C2.50.00_0",
+                "1": "top2C2.50.00_1",
+                "2": "top2C2.50.00_2",
+                "3": "right2C2.50.00_0",
+                "4": "right2C2.50.00_1",
+                "5": "right2C2.50.00_2",
+                "6": "C1C2.50.00_0",
+                "7": "C1C2.50.00_1",
+                "8": "C1C2.50.00_2",
+                "9": "B2C2.50.00_0",
+                "10": "B2C2.50.00_1",
+                "11": "B2C2.50.00_2"
+            },
+            "cleaned_incoming": {
+                "0": "C1C2.50.00_0",
+                "1": "top2C2.50.00_0",
+                "2": "B2C2.50.00_0",
+                "3": "right2C2.50.00_1",
+                "4": "right2C2.50.00_0",
+                "5": "B2C2.50.00_2",
+                "6": "C1C2.50.00_2",
+                "7": "top2C2.50.00_1",
+                "8": "top2C2.50.00_2",
+                "9": "C1C2.50.00_1",
+                "10": "right2C2.50.00_2",
+                "11": "B2C2.50.00_1"
+            },
+            "outgoing": {
+                "0": "C2C1_0",
+                "1": "C2B2_0",
+                "2": "C2top2_0",
+                "3": "C2right2_0"
+            },
+            "cleaned_outgoing": {
+                "0": "C2C1_0",
+                "1": "C2B2_0",
+                "2": "C2top2_0",
+                "3": "C2right2_0"
+            }
+        },
+        "phases": {
+            "0": {
+                "full_phase": "GrrrrrGrrrrr",
+                "lanes_green": [
+                    "C1C2.50.00_0",
+                    "top2C2.50.00_0"
+                ]
+            },
+            "1": {
+                "full_phase": "YrrrrrYrrrrr",
+                "lanes_green": []
+            },
+            "2": {
+                "full_phase": "rGrrrrrGrrrr",
+                "lanes_green": [
+                    "top2C2.50.00_1",
+                    "C1C2.50.00_1"
+                ]
+            },
+            "3": {
+                "full_phase": "rYrrrrrYrrrr",
+                "lanes_green": []
+            },
+            "4": {
+                "full_phase": "rrGrrrrrGrrr",
+                "lanes_green": [
+                    "top2C2.50.00_2",
+                    "C1C2.50.00_2"
+                ]
+            },
+            "5": {
+                "full_phase": "rrYrrrrrYrrr",
+                "lanes_green": []
+            },
+            "6": {
+                "full_phase": "rrrGrrrrrGrr",
+                "lanes_green": [
+                    "B2C2.50.00_0",
+                    "right2C2.50.00_0"
+                ]
+            },
+            "7": {
+                "full_phase": "rrrYrrrrrYrr",
+                "lanes_green": []
+            },
+            "8": {
+                "full_phase": "rrrrGrrrrrGr",
+                "lanes_green": [
+                    "right2C2.50.00_1",
+                    "B2C2.50.00_1"
+                ]
+            },
+            "9": {
+                "full_phase": "rrrrYrrrrrYr",
+                "lanes_green": []
+            },
+            "10": {
+                "full_phase": "rrrrrGrrrrrG",
+                "lanes_green": [
+                    "B2C2.50.00_2",
+                    "right2C2.50.00_2"
+                ]
+            },
+            "11": {
+                "full_phase": "rrrrrYrrrrrY",
+                "lanes_green": []
+            }
+        }
+    }
+}

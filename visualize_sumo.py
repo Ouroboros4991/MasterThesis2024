@@ -18,7 +18,7 @@ def visualize(traffic: str, model: str):
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
     duration = end_time - start_time
-    env = CustomSumoEnvironment(
+    env = BrokenLightEnvironment(  # TODO: add variable to change this
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
         use_gui=True,
@@ -47,6 +47,7 @@ def visualize(traffic: str, model: str):
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
             action_dict = agent.convert_action_to_dict(action)
+        print("Action dict:", action_dict)
         obs, reward, terminate, truncated, info = env.step(action_dict)
 
 if __name__ == "__main__":

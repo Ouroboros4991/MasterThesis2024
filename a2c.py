@@ -24,7 +24,7 @@ from configs import ROUTE_SETTINGS
 from utils.utils import DictToFlatActionWrapper
 
 
-def setup_env(traffic: str, reward_fn: str, reward_weights: dict = {}):
+def setup_env(traffic: str, reward_fn: str, reward_weights: dict = {}, broken: bool = False):
     """Setup the environment for the given traffic scenario.
 
     Args:
@@ -40,15 +40,27 @@ def setup_env(traffic: str, reward_fn: str, reward_weights: dict = {}):
     duration = end_time - start_time
 
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = BrokenLightEnvironment(
-        net_file=route_file.format(type="net"),
-        route_file=route_file.format(type="rou"),
-        # single_agent=True,
-        begin_time=start_time,
-        num_seconds=duration,
-        reward_fn=reward_fn,
-        intelli_light_weight=reward_weights,
-    )
+    if broken:
+        env = BrokenLightEnvironment(
+            net_file=route_file.format(type="net"),
+            route_file=route_file.format(type="rou"),
+            # single_agent=True,
+            begin_time=start_time,
+            num_seconds=duration,
+            reward_fn=reward_fn,
+            intelli_light_weight=reward_weights,
+        )
+    else:
+        env = CustomSumoEnvironment(
+            net_file=route_file.format(type="net"),
+            route_file=route_file.format(type="rou"),
+            # single_agent=True,
+            begin_time=start_time,
+            num_seconds=duration,
+            reward_fn=reward_fn,
+            intelli_light_weight=reward_weights,
+        )
+
     print("Environment created")
     env = Monitor(env)  # TODO: 
 
@@ -58,9 +70,12 @@ def setup_env(traffic: str, reward_fn: str, reward_weights: dict = {}):
     return env
 
 
-def train(env, traffic: str, steps: int = 30000):    
-    experiment_name = f"a2c_broken_{traffic}_{steps}_steps"
-
+def train(env, traffic: str, steps: int = 30000, broken: bool = False):
+        
+    if broken:
+        experiment_name = f"a2c_broken_{traffic}_{steps}_steps"
+    else:
+        experiment_name = f"a2c_{traffic}_{steps}_steps"
 
     # env = DummyVecEnv([lambda: env])
     env.reset()
@@ -91,16 +106,27 @@ def train(env, traffic: str, steps: int = 30000):
 #     env_high = setup_env(traffic_high, "intelli_light_reward", reward_weights=weights)
 #     agent_high = train(env_high, traffic_high, training_steps)
 
-def main():
-    # training_steps = 50000
-    training_steps = 250000
-    traffic = "3x3grid"
-    # traffic = "custom-2way-single-intersection"
+def main(traffic: str, steps: int, broken: bool = False):
+    """Main function to train the agent."""
     
     weights = {"delay": 3, "waiting_time": 3, "light_switches": 2}
     
-    env = setup_env(traffic, "intelli_light_reward", reward_weights=weights)
-    train(env, traffic, training_steps)
+    env = setup_env(traffic, "intelli_light_reward", reward_weights=weights, broken=broken)
+    train(env, traffic, steps, broken)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+                    description='Evaluate the provided model using the given traffic scenario.',
+                    )
+    parser.add_argument('-t', '--traffic',
+                        choices=ROUTE_SETTINGS.keys(),
+                        required=True) 
+    parser.add_argument('-s', '--steps',
+                        type=int,
+                        default=100000,
+                        help='Number of steps to train the agent.')
+    parser.add_argument('-b', '--broken',
+                        action='store_true',
+                        help='Use broken traffic lights.')
+    args = parser.parse_args()
+    main(args.traffic, args.steps, args.broken)

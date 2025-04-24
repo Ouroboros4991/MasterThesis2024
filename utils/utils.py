@@ -18,7 +18,7 @@ import gymnasium as gym
 from gymnasium.spaces import Dict, MultiDiscrete, Discrete
 
 
-def create_env(traffic: str, reward_fn: None):
+def create_env(traffic: str, reward_fn: None, broken: bool = False) -> CustomSumoEnvironment:
     """Create the environment based on the traffic setting"""
     os.environ["LIBSUMO_AS_TRACI"] = "1" 
     os.environ["SUMO_HOME"] = "/usr/share/sumo"       
@@ -29,13 +29,22 @@ def create_env(traffic: str, reward_fn: None):
     start_time = settings["begin_time"]
     end_time = settings["end_time"]
     duration = end_time - start_time
-    env = CustomSumoEnvironment(
-        net_file=route_file.format(type="net"),
-        route_file=route_file.format(type="rou"),
-        # single_agent=True,
-        begin_time=start_time,
-        num_seconds=duration,
-    )
+    if broken:
+        env = BrokenLightEnvironment(
+            net_file=route_file.format(type="net"),
+            route_file=route_file.format(type="rou"),
+            # single_agent=True,
+            begin_time=start_time,
+            num_seconds=duration,
+        )
+    else:
+        env = CustomSumoEnvironment(
+            net_file=route_file.format(type="net"),
+            route_file=route_file.format(type="rou"),
+            # single_agent=True,
+            begin_time=start_time,
+            num_seconds=duration,
+        )
     env.reset()
     return env
 
@@ -52,6 +61,21 @@ class DictToFlatActionWrapper(gym.ActionWrapper):
     def action(self, action):
         # Convert the flat array back into a dict
         return {key: int(a) for key, a in zip(self.keys, action)}
+    
+    
+    def __getattr__(self, name):
+        """Updated to also be able to directly access the env attributes"""
+        try:
+            # Avoid recursion: use base implementation to get .inner
+            env = super().__getattribute__('env')
+        except AttributeError:
+            raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
+        # Delegate attribute lookup to the inner object
+        try:
+            return getattr(env, name)
+        except AttributeError:
+            # Optional: customise the error message
+            return super().__getattribute__(name)
 
 
 

@@ -6,6 +6,7 @@ class CyclicAgent:
     
     def __init__(self, env, green_duration, *args, **kwargs):
         self.green_duration = green_duration
+        print(env.traffic_signals)
         self.traffic_light_configs = {
             ts_id: {
                 "time_in_phase": 0,
@@ -39,5 +40,4 @@ class CyclicAgent:
                     ts_config["time_in_phase"] = 0
                     ts_config["current_phase"] = (ts_config["current_phase"] + 1) % n_phases
             action[ts_id] = ts_config["current_phase"]
-        print("TESTING", action)
         return action, None
