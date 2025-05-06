@@ -354,7 +354,7 @@ class CustomSumoEnvironment(SumoEnvironment):
 
 class BrokenLightEnvironment(CustomSumoEnvironment):
     
-    def __init__(self, broken_light_start: int=0, broken_light_end: int=0, *args, **kwargs):
+    def __init__(self, broken_light_start: int=None, broken_light_end: int=None, *args, **kwargs):
         """Initialize the environment with a broken traffic light.
 
         Args:
@@ -364,8 +364,8 @@ class BrokenLightEnvironment(CustomSumoEnvironment):
         super().__init__(*args, **kwargs)
         self.broken_light_start = broken_light_start
         self.broken_light_end = broken_light_end
-        self.broken_light_id = None
-        
+        self.broken_light_id = None            
+        self.broken_light_period_specified = self.broken_light_start is not None and self.broken_light_end is not None
     
     def step(self, action: Union[dict, int]):
         """Apply the action(s) and then step the simulation for delta_time seconds.
@@ -374,14 +374,21 @@ class BrokenLightEnvironment(CustomSumoEnvironment):
             action (Union[dict, int]): action(s) to be applied to the environment.
             If single_agent is True, action is an int, otherwise it expects a dict with keys corresponding to traffic signal ids.
         """
-        if not self.broken_light_id:
-            tf_ids = list(action.keys())
-            middle = (len(tf_ids)-1) // 2
-            self.broken_light_id = tf_ids[middle]
-            print(f"Broken light id: {self.broken_light_id}")
-        # Override the actions to keep 1 stop light on red as if the junction was blocked
-        # TODO: update the logic so that this junction is only blocked for a certain amount of time
-        action[self.broken_light_id ] = -1
+        should_replace = False
+        if self.broken_light_period_specified:
+            if self.sim_step >= self.broken_light_start and self.sim_step <= self.broken_light_end:
+                should_replace = True
+        else:
+            should_replace = True
+        if should_replace:
+            if not self.broken_light_id:
+                tf_ids = list(action.keys())
+                middle = (len(tf_ids)-1) // 2
+                self.broken_light_id = tf_ids[middle]
+                print(f"Broken light id: {self.broken_light_id}")
+            # Override the actions to keep 1 stop light on red as if the junction was blocked
+            # TODO: update the logic so that this junction is only blocked for a certain amount of time
+            action[self.broken_light_id ] = -1
         
         
         observations, reward, terminated, truncated, info = super().step(action)

@@ -1,0 +1,1 @@
+3lanes traffic junction but with the option to have individual phases

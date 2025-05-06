@@ -33,6 +33,36 @@ class ReluNetwork(nn.Module):
         return logits
 
 
+class MultiDiscreteReluNetwork(nn.Module):
+    def __init__(self, input_size, action_sizes, device):
+        super().__init__()
+        self.flatten = nn.Flatten()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(input_size, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            # nn.Linear(256, n_actions),
+        )
+        # self.apply(self.init_weights)
+        self.heads = nn.ModuleList(
+            nn.Linear(256, int(size)) for size in action_sizes
+        )
+        self.to(device)
+
+
+    def init_weights(self, m):
+        if isinstance(m, torch.nn.Linear):
+            init.constant_(m.weight, -10.0)  # Initialize weights to large negative values
+            if m.bias is not None:
+                init.constant_(m.bias, -10.0)  # Initialize biases to large negative values
+
+
+    def forward(self, x):
+        x = self.flatten(x)
+        items = self.linear_relu_stack(x)
+        logits = [head(items) for head in self.heads]
+        return logits
 
 class QNetwork(nn.Module):
     def __init__(self, obs_size, action_size, device):

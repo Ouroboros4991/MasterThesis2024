@@ -57,7 +57,8 @@ def run_episode(env, agent):
             # Option critic
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
-            action_dict = agent.convert_action_to_dict(action)
+            action_dict = action
+            # action_dict = agent.convert_action_to_dict(action)
             try:
                 termination_prob = agent.get_terminations(state)[
                     :, agent.current_option
@@ -214,7 +215,7 @@ def multiple_episodes(env, agent, prefix, n_episodes: int=100, save: bool=True):
 
 def main(traffic: str, model: str, broken: bool = False):
     env = utils.create_env(traffic, reward_fn="pressure", broken=broken)
-    if model.startswith("a2c"):
+    if model.startswith("a2c") or model.startswith("option_critic"):
         env = utils.DictToFlatActionWrapper(env)
     if broken:
         prefix = f"{model}_broken_{traffic}"

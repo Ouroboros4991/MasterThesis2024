@@ -10,8 +10,10 @@ import numpy as np
 
 from agents.option_critic_utils import to_tensor
 from agents.option_networks import ReluNetwork
+from agents.option_networks import MultiDiscreteReluNetwork
 from agents.option_networks import TerminationFunctionNetwork
 from agents.option_networks import QNetwork
+import torch.nn.functional as F
 
 
 class OptionCriticNeuralNetwork(nn.Module):
@@ -43,26 +45,32 @@ class OptionCriticNeuralNetwork(nn.Module):
         self.current_option = 0
         
         self.num_options = num_options
-        # self.option_termination_states = {o: [] for o in range(self.num_options)}
+        # # self.option_termination_states = {o: [] for o in range(self.num_options)}
         
-        # self.env = env
-        self.init_actions(env)
+        # # self.env = env
         
-        self.num_actions = len(self.action_list)
         self.in_features = self.calculate_in_features(env)
         
-        # self.features = nn.Sequential(
-        #     nn.Linear(in_features, 32),
-        #     nn.ReLU(),
-        #     nn.Linear(32, 64),
-        #     nn.ReLU()
-        # )
+        # # self.features = nn.Sequential(
+        # #     nn.Linear(in_features, 32),
+        # #     nn.ReLU(),
+        # #     nn.Linear(32, 64),
+        # #     nn.ReLU()
+        # # )
 
-        # self.Q = nn.Linear(self.in_features, num_options)  # Policy-Over-Options
+        # # self.Q = nn.Linear(self.in_features, num_options)  # Policy-Over-Options
         self.Q = QNetwork(self.in_features, num_options, device)
         self.terminations = TerminationFunctionNetwork(self.in_features, self.num_options, device)
         # self.terminations = nn.Linear(in_features, num_options)  # Option-Termination
-        self.option_policies = [ReluNetwork(self.in_features, self.num_actions, device)
+        self.num_actions = len(env.action_space.nvec)
+        self.action_sizes = env.action_space.nvec
+        # if self.num_actions == 1:
+        #     self.option_policies = [ReluNetwork(self.in_features, self.action_size, device)
+        #                             for _ in range(num_options)]
+        # else:
+        self.option_policies = [MultiDiscreteReluNetwork(self.in_features,
+                                                         action_sizes = self.action_sizes,
+                                                         device=device)
                                 for _ in range(num_options)]
 
         self.to(device)
@@ -89,9 +97,9 @@ class OptionCriticNeuralNetwork(nn.Module):
         
         # include option information
         # Simplified to make it easier to manage
-        encoded_option = np.zeros(self.num_options)
-        encoded_option[self.current_option] = 1
-        obs_array = np.append(obs_array, encoded_option)
+        # encoded_option = np.zeros(self.num_options)
+        # encoded_option[self.current_option] = 1
+        # obs_array = np.append(obs_array, encoded_option)
         
         # Convert to tensor
         obs_tensor = to_tensor(obs_array)
@@ -119,10 +127,11 @@ class OptionCriticNeuralNetwork(nn.Module):
         for tf_id, traffic_light in env.traffic_signals.items():
             self.actions_per_traffic_light[tf_id] = [i for i in range(traffic_light.num_green_phases)]
         possible_actions = list(self.actions_per_traffic_light.values())
-        if len(possible_actions) == 1:
-            self.action_list = possible_actions[0]
-        else:
-            self.action_list = list(itertools.product(*possible_actions))
+        print(possible_actions)
+        # if len(possible_actions) == 1:
+        #     self.action_list = possible_actions[0]
+        # else:
+        #     self.action_list = list(itertools.product(*possible_actions))
 
     
     def convert_action_to_dict(self, action: int) -> dict:
@@ -204,20 +213,35 @@ class OptionCriticNeuralNetwork(nn.Module):
             self.update_option_lengths()
             self.curr_op_len = 0
         self.current_option = new_option
-        
+        state = state.to(self.device)
         action_dist = self.option_policies[self.current_option](state)
-        action_dist = Categorical(logits=action_dist)
-        action = action_dist.sample()
-        logp = action_dist.log_prob(action)
-        entropy = action_dist.entropy()
+        
+        action_dist = [F.softmax(logit, dim=-1) for logit in action_dist]
+        actions = [torch.multinomial(p, num_samples=1).squeeze(-1) for p in action_dist]
+        # action_dist = Categorical(logits=action_dist)
+        # action = action_dist.sample()
+        # logp = action_dist.log_prob(action)
+        
+        entropy_arr = []
+        log_p_array = []
+        for logit, action in zip(action_dist, actions):
+            logp_probs = F.log_softmax(logit, dim=-1)
+            logp = logp_probs.gather(1, action.unsqueeze(1)).squeeze(1)
+            log_p_array.append(logp)
+            
+            logp_probs = F.log_softmax(logit, dim=-1)
+            probs = F.softmax(logit, dim=-1)
+            entropy = -torch.sum(logp_probs * probs, dim=-1)
+            entropy_arr.append(entropy)
         
         additional_info = {
-            "logp": logp,
-            "entropy": entropy,
+            "logp": torch.stack(log_p_array, dim=-1).sum(dim=-1).item(),
+            "entropy": torch.stack(entropy_arr, dim=-1).sum(dim=-1).item(),
             "termination": option_termination,
             "greedy_option": greedy_option,
         }
-        return action.item(), additional_info
+
+        return [action.item() for action in actions], additional_info
 
     def update_option_lengths(self):
         self.option_lengths[self.current_option].append(self.curr_op_len )

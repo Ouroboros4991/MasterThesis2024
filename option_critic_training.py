@@ -12,17 +12,19 @@ from agents.option_critic_nn import OptionCriticNeuralNetwork
 from agents.option_critic_utils import critic_loss as critic_loss_fn
 from agents.option_critic_utils import actor_loss as actor_loss_fn
 
-from sumo_rl_environment.custom_env import CustomSumoEnvironment
+from sumo_rl_environment.custom_env import CustomSumoEnvironment, BrokenLightEnvironment
 
 from utils.experience_replay import ReplayBuffer
 from utils.sb3_logger import SB3Logger as Logger
+from utils import utils
 
 import time
 
 from configs import ROUTE_SETTINGS
 
-TRAFFIC = "custom-2way-single-intersection3"
+# TRAFFIC = "custom-2way-single-intersection3"
 # TRAFFIC = "cologne8"
+TRAFFIC = "3x3grid-3lanes2"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 agents = {
@@ -144,18 +146,21 @@ def run(args):
     if args.hd_reg:
         experiment_name += "_hd_reg"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = CustomSumoEnvironment(
+    env = BrokenLightEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
         # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
         intelli_light_weight={"delay": 3, "waiting_time": 3, "light_switches": 2},
+        broken_light_start=1000,
+        broken_light_end=1500
     )
+    env = utils.DictToFlatActionWrapper(env)
     env.reset()
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    option_critic = agents[args.agent](
+    option_critic = OptionCriticNeuralNetwork(
         env=env,
         num_options=args.num_options,
         temperature=args.temp,
@@ -164,9 +169,9 @@ def run(args):
         eps_decay=args.epsilon_decay,
         eps_test=args.optimal_eps,
         device=device,
-        start_min_policy_length=args.start_min_policy_length
+        # start_min_policy_length=args.start_min_policy_length
     )
-    # Create a prime network for more stable Q values
+    # # Create a prime network for more stable Q values
     option_critic_prime = deepcopy(option_critic)
 
     # optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
@@ -207,7 +212,8 @@ def run(args):
             entropy = additional_info["entropy"]
             if additional_info["termination"]:
                 option_termination_states[current_option].append(density)
-            next_obs, reward, done, truncated, info = env.step(option_critic.convert_action_to_dict(action))
+            # next_obs, reward, done, terminate, info = env.step(option_critic.convert_action_to_dict(action))
+            next_obs, reward, done, terminate, info = env.step(action)
             next_state = option_critic.prep_state(next_obs)
 
             buffer.push(state, option_critic.current_option, reward, next_state, done)
@@ -257,7 +263,6 @@ def run(args):
         )
         episode += 1
         # min_option_length = min_option_length * args.policy_length_decay
-        # print(min_option_length, args.policy_length_decay)
         
 
     # torch.save(

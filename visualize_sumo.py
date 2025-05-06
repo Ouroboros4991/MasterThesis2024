@@ -24,6 +24,9 @@ def visualize(traffic: str, model: str):
         use_gui=True,
         begin_time=start_time,
         num_seconds=duration,
+        # broken_light_start=100,
+        # broken_light_end=500
+        
     )
     if model.startswith("a2c"):
         env = utils.DictToFlatActionWrapper(env)
@@ -47,7 +50,7 @@ def visualize(traffic: str, model: str):
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
             action_dict = agent.convert_action_to_dict(action)
-        print("Action dict:", action_dict)
+        # print("Action dict:", action_dict)
         obs, reward, terminate, truncated, info = env.step(action_dict)
 
 if __name__ == "__main__":

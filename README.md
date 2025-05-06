@@ -59,11 +59,16 @@ netgenerate \
   --tls.set=A0,A1,A2,B0,B1,B2,C0,C1,C2 \
   --output-file=3x3Grid3lanes.net.xml
 
+
+--fringe-factor max  sets all trips to start from the edges of the network. Prevents cars from randomly teleporting inside crossroads.
+
+
 python $SUMO_HOME/tools/randomTrips.py \
   -n 3x3Grid3lanes.net.xml \
   -o 3x3Grid3lanes.trips.xml \
   -b 0 -e 3600 \
   -p 5 \
+  --fringe-factor max \
   --random
 
 duarouter \

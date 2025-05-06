@@ -86,6 +86,8 @@ def train(env, traffic: str, steps: int = 30000, broken: bool = False):
         verbose=3,
         gamma=0.95,
         tensorboard_log=f"runs/{experiment_name}",
+        learning_rate=0.0001,
+        ent_coef=0.02
     )
 
     agent.learn(total_timesteps=steps)
