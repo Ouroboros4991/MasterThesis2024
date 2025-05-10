@@ -24,7 +24,9 @@ from sumo_rl_environment.custom_functions import (
     queue_based_reward3_function,
     intelli_light_reward,
     intelli_light_reward_prioritized,
-    CustomObservationFunction
+    intelli_light_prcol_reward,
+    CustomObservationFunction,
+    custom_waiting_time_reward
 ) 
 
 LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
@@ -160,6 +162,8 @@ class CustomSumoEnvironment(SumoEnvironment):
             "pressure": "pressure",
             "intelli_light_reward" : intelli_light_reward,
             "intelli_light_reward_prioritized": intelli_light_reward_prioritized,
+            "custom_waiting_time": custom_waiting_time_reward,
+            "intelli_light_prcol_reward": intelli_light_prcol_reward,
         }
         if not reward_fn:
             reward_fn = "intelli_light_reward"
@@ -261,7 +265,18 @@ class CustomSumoEnvironment(SumoEnvironment):
         observations, rewards, dones, info = super().step(action)
         terminated = dones["__all__"]
         truncated = terminated
-        reward = np.mean(list(rewards.values()))
+        # print(rewards)
+        # reward = np.mean(list(rewards.values()))
+        
+        # Can't use fairness because the bad one will always perform worse?
+        mean_reward = np.mean(list(rewards.values()))
+        # Fairness enhanced reward
+        # reward = 0
+        # alpha = 0.5
+        # for r in list(rewards.values()):
+        #     reward += (r - alpha * (r - mean_reward)**2) 
+
+        reward = mean_reward
         return observations, reward, terminated, truncated, info
     
     @property

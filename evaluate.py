@@ -115,6 +115,7 @@ def run_episode(env, agent):
 
 
 def single_episodes(env, agent, prefix, save: bool=True):
+    print("Running single episode")
     results = run_episode(env, agent)
     if save:
         print("Writing single episode to csv")

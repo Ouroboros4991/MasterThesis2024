@@ -149,16 +149,36 @@ class CustomTrafficSignal(TrafficSignal):
     
     
     def get_cars_leaving(self):
-        """Returns the number of cars that have left the intersection since the last action"""
+        """Returns the number of cars that have left the intersection since the last action.
+        This is calculated by looking which cars are in the out lanes of the traffic light.
+        """
         cars_left = 0
+        # for lane in self.out_lanes:
+        #     veh_list = self.sumo.lane.getLastStepVehicleIDs(lane)
+        #     cars_left += len(veh_list)
+        
         for lane in self.lanes:
             veh_list = self.sumo.lane.getLastStepVehicleIDs(lane)
             prev_veh = self.prev_car_incoming.get(lane, [])
-            for veh in veh_list:
-                if veh not in prev_veh:
+            for veh in prev_veh:
+                if veh not in veh_list:
                     cars_left += 1
             self.prev_car_incoming[lane] = veh_list
         return cars_left
+    
+    
+    def get_out_lanes_usage(self) -> List[float]:
+        """Calculate how full the out lanes are.
+        """        
+        out_lanes_usage = []
+        for lane in self.out_lanes:
+            lane_max_capacity = self.lanes_length[lane] / (self.MIN_GAP + self.sumo.lane.getLastStepLength(lane))
+            n_vehicles = self.sumo.lane.getLastStepHaltingNumber(lane)
+            lane_usage = min(1, n_vehicles/lane_max_capacity)
+            # lane_availability = 1 - lane_usage
+            out_lanes_usage.append(lane_usage)
+        return out_lanes_usage
+    
     
     def custom_reward(self):
         """Custom reward function that uses the pressure reward as a benchmark
@@ -307,7 +327,13 @@ class CustomTrafficSignal(TrafficSignal):
         # # Penalize more frequent changes
         # reward -= 5 * freq_penalty
         return reward
-
+    
+    
+    def custom_waiting_time_reward(self):
+        """Custom waiting time reward function
+        """
+        waiting_times = self.get_scaled_waiting_time(with_reset=True)
+        return -10 * np.max(waiting_times)
 
     def intelli_light_reward(self):
         """IntelliLight reward function
@@ -320,8 +346,8 @@ class CustomTrafficSignal(TrafficSignal):
         
         rewards = {
             # 'queue': np.mean(queue_lengths),
-            'delay': np.mean(delay),
-            'waiting_time': np.mean(waiting_times),
+            'delay': np.max(delay),
+            'waiting_time': np.max(waiting_times),
             'light_switches': light_switches,
             # 'cars_leaving': cars_leaving,
             # 'travel_time': np.sum(travel_durations),
@@ -332,7 +358,6 @@ class CustomTrafficSignal(TrafficSignal):
             # print(key, value, reward_weight)
             reward -= reward_weight * value
         return reward
-
     
     def intelli_light_reward_prioritized(self):
         """IntelliLight reward function
@@ -354,6 +379,33 @@ class CustomTrafficSignal(TrafficSignal):
             'delay': np.mean(delay),
             'waiting_time': np.mean(waiting_times),
             'light_switches': light_switches,
+            # 'cars_leaving': cars_leaving,
+            # 'travel_time': np.sum(travel_durations),
+        }
+        reward = cars_leaving
+        for key, value in rewards.items():
+            reward_weight = self.intelli_light_weight.get(key, 1)
+            # print(key, value, reward_weight)
+            reward -= reward_weight * value
+        return reward
+    
+    
+    def intelli_light_prcol_reward(self):
+        """IntelliLight reward function with out lanes capacility. Inspired by the PRCOL algorithm
+        """
+        waiting_times = self.get_scaled_waiting_time(with_reset=True)
+        queue_lengths = self.get_lanes_queue()
+        delay = self.get_delay()
+        light_switches = int(self.steps_in_current_phase == 0)
+        cars_leaving = self.get_cars_leaving()
+        out_lanes_availability = self.get_out_lanes_usage()
+        
+        rewards = {
+            # 'queue': np.mean(queue_lengths),
+            'delay': np.max(delay),
+            'waiting_time': np.max(waiting_times),
+            'light_switches': light_switches,
+            'out_lanes_availability': np.max(out_lanes_availability)
             # 'cars_leaving': cars_leaving,
             # 'travel_time': np.sum(travel_durations),
         }

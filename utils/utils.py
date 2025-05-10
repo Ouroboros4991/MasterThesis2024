@@ -36,8 +36,8 @@ def create_env(traffic: str, reward_fn: None, broken: bool = False) -> CustomSum
             # single_agent=True,
             begin_time=start_time,
             num_seconds=duration,
-            broken_light_start = 1000,
-            broken_light_end = 1500
+            # broken_light_start = 1000,
+            # broken_light_end = 1500
         )
     else:
         env = CustomSumoEnvironment(

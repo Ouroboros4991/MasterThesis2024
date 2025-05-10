@@ -1,6 +1,6 @@
 import numpy as np
 import operator
-
+import json
 # import wandb
 
 from sumo_rl import SumoEnvironment
@@ -62,21 +62,24 @@ def setup_env(traffic: str, reward_fn: str, reward_weights: dict = {}, broken: b
         )
 
     print("Environment created")
-    env = Monitor(env)  # TODO: 
-
     env = DictToFlatActionWrapper(env) 
+
+    env = Monitor(env)
+
     # env = FlattenObservation(env)
     print(env.action_space, env.observation_space)
     return env
 
 
-def train(env, traffic: str, steps: int = 30000, broken: bool = False):
+def train(env, traffic: str, steps: int = 30000, reward_fn: str = "pressure", broken: bool = False):
         
     if broken:
         experiment_name = f"a2c_broken_{traffic}_{steps}_steps"
     else:
         experiment_name = f"a2c_{traffic}_{steps}_steps"
-
+    experiment_name += reward_fn
+    if env.env.intelli_light_weight:
+        experiment_name += "_".join([f"{key}_{value}" for key, value in env.env.intelli_light_weight.items()])
     # env = DummyVecEnv([lambda: env])
     env.reset()
 
@@ -86,7 +89,7 @@ def train(env, traffic: str, steps: int = 30000, broken: bool = False):
         verbose=3,
         gamma=0.95,
         tensorboard_log=f"runs/{experiment_name}",
-        learning_rate=0.0001,
+        # learning_rate=0.0001,
         ent_coef=0.02
     )
 
@@ -94,27 +97,19 @@ def train(env, traffic: str, steps: int = 30000, broken: bool = False):
     agent.save(f"models/{experiment_name}.zip")
     return agent
 
-# def main():
-#     # training_steps = 50000
-#     training_steps = 100000
-#     traffic_low = "custom-2way-single-intersection-low"
-#     traffic_high = "custom-2way-single-intersection-high"
-    
-#     weights = {"delay": 3, "waiting_time": 3, "light_switches": 2}
-    
-#     env_low = setup_env(traffic_low, "intelli_light_reward", reward_weights=weights)
-#     agent_low = train(env_low, traffic_low, training_steps)
 
-#     env_high = setup_env(traffic_high, "intelli_light_reward", reward_weights=weights)
-#     agent_high = train(env_high, traffic_high, training_steps)
-
-def main(traffic: str, steps: int, broken: bool = False):
+def main(traffic: str, steps: int, reward_fn: str, broken: bool = False):
     """Main function to train the agent."""
     
-    weights = {"delay": 3, "waiting_time": 3, "light_switches": 2}
+    weights = {
+        "delay": 3,
+        "waiting_time": 3,
+        "light_switches": 2,
+        "out_lanes_availability": 1
+    }
     
-    env = setup_env(traffic, "intelli_light_reward", reward_weights=weights, broken=broken)
-    train(env, traffic, steps, broken)
+    env = setup_env(traffic, reward_fn, reward_weights=weights, broken=broken)
+    train(env, traffic, steps, reward_fn, broken)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -130,5 +125,12 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--broken',
                         action='store_true',
                         help='Use broken traffic lights.')
+    parser.add_argument('-r', "--reward_fn",
+                        type=str,
+                        help="Reward function to use",
+                        default="intelli_light_reward"
+                        )
     args = parser.parse_args()
-    main(args.traffic, args.steps, args.broken)
+    # reward_fn = "intelli_light_prcol_reward"
+
+    main(args.traffic, args.steps, args.reward_fn, args.broken)

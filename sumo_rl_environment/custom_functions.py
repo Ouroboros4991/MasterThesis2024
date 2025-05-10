@@ -55,7 +55,8 @@ class CustomObservationFunction(ObservationFunction):
             wait_time = []
             for veh in veh_list:
                 veh_lane = ts.sumo.vehicle.getLaneID(veh)
-                acc = ts.sumo.vehicle.getAccumulatedWaitingTime(veh)
+                # acc = ts.sumo.vehicle.getAccumulatedWaitingTime(veh)
+                acc = ts.sumo.vehicle.getWaitingTime(veh)
                 if veh not in ts.env.vehicles:
                     ts.env.vehicles[veh] = {veh_lane: acc}
                 else:
@@ -120,11 +121,12 @@ class CustomObservationFunction(ObservationFunction):
             # "avg_waiting_time": [np.mean(waiting_time) for waiting_time in waiting_times],
             "average_speed": self.ts.get_average_speed()
         }
-
-    def __call__(self) -> np.ndarray:
-        """Return the default observation."""
-        # TODO: create function that returns the observation as dict
-        observation_dict = self.get_observations_dict()
+        
+        
+    @staticmethod
+    def get_observation_arr(observation_dict: dict) -> np.ndarray:
+        """Generates the observation as array
+        """
         # current_time = observation_dict["current_time"]
         phase_ids = observation_dict["current_phase_ids"]
         # phase_ids = observation_dict["hist_phase_ids"]
@@ -136,11 +138,18 @@ class CustomObservationFunction(ObservationFunction):
         waiting_times = []
         for waiting_time in observation_dict["waiting_times"]:
             if waiting_time:
-                waiting_times.append(np.mean(waiting_time))
+                waiting_times.append(np.max(waiting_time))
             else:
                 waiting_times.append(0)
         # observation = np.array(phase_ids + queue + queue_der + waiting_times + [average_speed], dtype=np.float32)
         observation = np.array(phase_ids + queue + waiting_times, dtype=np.float32)
+        return observation
+
+    def __call__(self) -> np.ndarray:
+        """Return the default observation."""
+        # TODO: create function that returns the observation as dict
+        observation_dict = self.get_observations_dict()
+        observation = self.get_observation_arr(observation_dict)
         return observation
 
     def observation_space(self) -> spaces.Box:
@@ -189,3 +198,11 @@ def intelli_light_reward(traffic_signal: CustomTrafficSignal):
 
 def intelli_light_reward_prioritized(traffic_signal: CustomTrafficSignal):
     return traffic_signal.intelli_light_reward_prioritized()
+
+
+def custom_waiting_time_reward(traffic_signal: CustomTrafficSignal):
+    return traffic_signal.custom_waiting_time_reward()
+
+
+def intelli_light_prcol_reward(traffic_signal: CustomTrafficSignal):
+    return traffic_signal.intelli_light_prcol_reward()

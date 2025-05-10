@@ -109,4 +109,9 @@ ROUTE_SETTINGS = {
         "begin_time": 0,
         "end_time": 3600,  # TODO: increase to 26000
     },
+    "3x3grid-3lanes3": {
+        "path": "sumo_rl_nets/3x3grid-3lanes3/3x3Grid3lanes.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,  # TODO: increase to 26000
+    },
 }

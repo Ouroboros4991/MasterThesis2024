@@ -53,7 +53,7 @@ netgenerate \
   --grid.number=3 \
   --grid.length=200 \
   --turn-lanes=2 \
-  --turn-lanes.length=150 \
+  --turn-lanes.length=10 \
   --grid.attach-length=200 \
   --no-turnarounds=True \
   --tls.set=A0,A1,A2,B0,B1,B2,C0,C1,C2 \

@@ -12,12 +12,13 @@ from agents.option_critic_nn import OptionCriticNeuralNetwork
 from agents.option_critic_utils import critic_loss_w_option_reward as critic_loss_fn
 from agents.option_critic_utils import actor_loss as actor_loss_fn
 
-from sumo_rl_environment.custom_env import CustomSumoEnvironment
+from sumo_rl_environment.custom_env import CustomSumoEnvironment, BrokenLightEnvironment
 
 from utils.experience_replay import ReplayBuffer
 from utils.experience_replay import OptionRewardReplayBuffer
 
 from utils.sb3_logger import SB3Logger as Logger
+from utils import utils
 
 import time
 
@@ -33,15 +34,23 @@ def get_option(options_dict: dict, current_step: int):
     return 0
 
 # TRAFFIC = "custom-2way-single-intersection"
-TRAFFIC = "custom-2way-single-intersection3"
+# TRAFFIC = "custom-2way-single-intersection3"
+# SETTINGS = ROUTE_SETTINGS[TRAFFIC]
+# OPTIONS_DICT = {
+#     "0-1000": 0,
+#     "1000-2000": 1,
+#     "2000-3000": 0,
+#     "3000-4000": 2,
+#     "4000-5000": 0,
+# }
+
+TRAFFIC = "3x3grid-3lanes2"
 SETTINGS = ROUTE_SETTINGS[TRAFFIC]
 
 OPTIONS_DICT = {
     "0-1000": 0,
-    "1000-2000": 1,
-    "2000-3000": 0,
-    "3000-4000": 2,
-    "4000-5000": 0,
+    "1000-1500": 1,
+    "1500-4000": 0,
 }
 
 agents = {
@@ -175,13 +184,30 @@ def run(args):
     if args.hd_reg:
         experiment_name += "_hd_reg"
     # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = CustomSumoEnvironment(
+    # env = CustomSumoEnvironment(
+    #     net_file=route_file.format(type="net"),
+    #     route_file=route_file.format(type="rou"),
+    #     # single_agent=True,
+    #     begin_time=start_time,
+    #     num_seconds=duration,
+    # )
+    env = BrokenLightEnvironment(
         net_file=route_file.format(type="net"),
         route_file=route_file.format(type="rou"),
         # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
+        intelli_light_weight={
+            "delay": 3,
+            "waiting_time": 3,
+            "light_switches": 2,
+            "out_lanes_availability": 1
+        },
+        broken_light_start=1000,
+        broken_light_end=1500,
+        reward_fn="intelli_light_prcol_reward",
     )
+    env = utils.DictToFlatActionWrapper(env)
     env.reset()
 
     num_episodes = int(args.max_steps_total / duration) * 5  # number of steps simulated between each time period we can take an action
@@ -224,7 +250,7 @@ def run(args):
         cumulative_rewards = 0
         cumulative_option_rewards = 0
 
-        obs = env.reset()        
+        obs, _ = env.reset()        
         
         logger.start_episode(steps) 
         option_termination_states = {o: [] for o in range(args.num_options)}
@@ -245,40 +271,37 @@ def run(args):
             current_option = option_critic.current_option
             density = get_lanes_density(env)
 
-
             state = option_critic.prep_state(obs)
             action, additional_info = option_critic.get_action(state, fixed_option)
             logp = additional_info["logp"]
             entropy = additional_info["entropy"]
             if additional_info["termination"]:
                 option_termination_states[current_option].append(density)
-            action_dict = option_critic.convert_action_to_dict(action)
-            next_obs, rewards, dones, info = env.step(action_dict)
-            reward = np.mean(list(rewards.values()))
-            
-            if int(env.sim_step % 1000) == 995:
-                option_reward = 0
-                for tf_id, prev_queue_size in previous_queue_sizes.items():
-                    max_lane_index = max_lanes[tf_id]
-                    current_queue_sizes = env.traffic_signals[tf_id].get_lanes_queue()
-                    for lane_id, prev_lane_queue in enumerate(prev_queue_size):
-                        current_queue_size = current_queue_sizes[lane_id]
-                        change_in_lane = 10 * (prev_lane_queue - current_queue_size)
-                        if lane_id == max_lane_index:
-                            change_in_lane = change_in_lane * 2
-                        option_reward += change_in_lane
-                    option_reward = -5 * env.traffic_signals[tf_id].get_waiting_time_penalty()
-            else:
-                option_reward = 0
-                if int(env.sim_step % 1000) == 0:
-                    max_lanes = get_lanes_max_queue(env)
-                    previous_queue_sizes = {
-                        tf_id: tf.get_lanes_queue() 
-                        for tf_id, tf in env.traffic_signals.items()
-                    }             
-            # option_reward = reward
+            # next_obs, reward, done, terminate, info = env.step(option_critic.convert_action_to_dict(action))
+            next_obs, reward, done, terminate, info = env.step(action)
+
+            # if int(env.sim_step % 1000) == 995:
+            #     option_reward = 0
+            #     for tf_id, prev_queue_size in previous_queue_sizes.items():
+            #         max_lane_index = max_lanes[tf_id]
+            #         current_queue_sizes = env.traffic_signals[tf_id].get_lanes_queue()
+            #         for lane_id, prev_lane_queue in enumerate(prev_queue_size):
+            #             current_queue_size = current_queue_sizes[lane_id]
+            #             change_in_lane = 10 * (prev_lane_queue - current_queue_size)
+            #             if lane_id == max_lane_index:
+            #                 change_in_lane = change_in_lane * 2
+            #             option_reward += change_in_lane
+            #         option_reward = -5 * env.traffic_signals[tf_id].get_waiting_time_penalty()
+            # else:
+            #     option_reward = 0
+            #     if int(env.sim_step % 1000) == 0:
+            #         max_lanes = get_lanes_max_queue(env)
+            #         previous_queue_sizes = {
+            #             tf_id: tf.get_lanes_queue() 
+            #             for tf_id, tf in env.traffic_signals.items()
+            #         }             
+            option_reward = reward
             next_state = option_critic.prep_state(next_obs)
-            done = dones["__all__"]
             buffer.push(state, option_critic.current_option, reward, option_reward, next_state, done)
             
 

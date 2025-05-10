@@ -152,9 +152,15 @@ def run(args):
         # single_agent=True,
         begin_time=start_time,
         num_seconds=duration,
-        intelli_light_weight={"delay": 3, "waiting_time": 3, "light_switches": 2},
+        intelli_light_weight={
+            "delay": 3,
+            "waiting_time": 3,
+            "light_switches": 2,
+            "out_lanes_availability": 1
+        },
         broken_light_start=1000,
-        broken_light_end=1500
+        broken_light_end=1500,
+        reward_fn="intelli_light_prcol_reward",
     )
     env = utils.DictToFlatActionWrapper(env)
     env.reset()

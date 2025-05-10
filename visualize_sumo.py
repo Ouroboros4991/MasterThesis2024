@@ -24,6 +24,7 @@ def visualize(traffic: str, model: str):
         use_gui=True,
         begin_time=start_time,
         num_seconds=duration,
+        reward_fn="intelli_light_prcol_reward",
         # broken_light_start=100,
         # broken_light_end=500
         
