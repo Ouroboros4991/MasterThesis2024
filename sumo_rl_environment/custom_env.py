@@ -3,6 +3,7 @@ File that contains the custom Sumo environment.
 This to ensure that the different training scripts can use the same environment.
 """
 
+from typing import List
 from collections import deque
 import os
 from typing import Callable, Optional, Tuple, Union
@@ -15,163 +16,18 @@ from sumo_rl import SumoEnvironment
 from sumo_rl.environment.observations import ObservationFunction, DefaultObservationFunction
 from sumo_rl.environment.traffic_signal import TrafficSignal
 
-
-class CustomObservationFunction(ObservationFunction):
-    """Default observation function for traffic signals."""
-
-    def __init__(self, ts: TrafficSignal):
-        """Initialize default observation function."""
-        super().__init__(ts)
-        self.previous_queue_length = []
-        self.phase_id_buffer = None    
-    
-    def get_observations_dict(self) -> dict:
-        """Generates the observation as dictionary
-        """
-        if self.phase_id_buffer is None:
-            # num_green_phases is only instantiated later
-            self.phase_id_buffer = {i: deque([0] * 4, maxlen=4) for i in range(self.ts.num_green_phases)}
-
-        current_time = [self.ts.sumo.simulation.getTime()]
-        
-        for phase in range(self.ts.num_green_phases):
-            if self.ts.green_phase == phase:
-                self.phase_id_buffer[phase].appendleft(1)
-            else:
-                self.phase_id_buffer[phase].appendleft(0)
-        phase_ids = []
-        for phase in range(self.ts.num_green_phases):
-            phase_ids.extend(list(self.phase_id_buffer[phase]))
-        # phase_id = [1 if self.ts.green_phase == i else 0 for i in range(self.ts.num_green_phases)]  # one-hot encoding
-        
-        min_green = [0 if self.ts.time_since_last_phase_change < self.ts.min_green + self.ts.yellow_time else 1]
-        density = self.ts.get_lanes_density()
-        queue = self.ts.get_lanes_queue()
-        if not self.previous_queue_length:
-            self.previous_queue_length = [0] * len(queue)
-        delta_queue = [queue[i]- self.previous_queue_length[i] for i in range(len(queue))]  
-        self.previous_queue_length = queue
-        return {
-            # "current_time": current_time,
-            "phase_ids": phase_ids,
-            # "phase_id": phase_id,
-            "min_green": min_green,
-            "density": density,
-            "queue": queue,
-            "delta_queue": delta_queue
-        }
-
-    def __call__(self) -> np.ndarray:
-        """Return the default observation."""
-        # TODO: create function that returns the observation as dict
-        observation_dict = self.get_observations_dict()
-        # current_time = observation_dict["current_time"]
-        phase_ids = observation_dict["phase_ids"]
-        # phase_id = observation_dict["phase_id"]
-        min_green = observation_dict["min_green"]
-        density = observation_dict["density"]
-        queue = observation_dict["queue"]
-        delta_queue = observation_dict["delta_queue"]
-        observation = np.array(phase_ids + min_green + density + queue + delta_queue, dtype=np.float32)
-        return observation
-
-    def observation_space(self) -> spaces.Box:
-        """Return the observation space."""
-        return spaces.Box(
-            low=np.zeros(4*self.ts.num_green_phases + 1 + 3 * len(self.ts.lanes), dtype=np.float32),
-            high=np.ones(4*self.ts.num_green_phases + 1 + 3 * len(self.ts.lanes), dtype=np.float32),
-        )
-
-class CustomTrafficSignal(TrafficSignal):
-    """Traffic signal class with some additional logic for the custom reward
-    """
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Keep track of how often a phase has been changed
-        self.phases_changes = {i: [] for i in range(self.num_green_phases)}
-        self.current_freq_phase = self.green_phase
-        self.steps_in_current_phase = 0
-        
-        self.total_length = sum([self.sumo.lane.getLength(lane) for lane in self.lanes])
-    
-    def update(self):
-        super().update()
-        if self.current_freq_phase == self.green_phase:
-            self.steps_in_current_phase += 1
-        else:
-            self.phases_changes[self.current_freq_phase].append(self.steps_in_current_phase)
-            self.current_freq_phase = self.green_phase
-            self.steps_in_current_phase = 0
-
-
-    def waiting_time_per_lane(self):
-        """Returns the waiting time of all vehicles per lane
-        
-        Returns as list of lists
-        """
-        wait_times_per_lane = []
-        for lane in self.lanes:
-            veh_list = self.sumo.lane.getLastStepVehicleIDs(lane)
-            wait_time = []
-            for veh in veh_list:
-                veh_lane = self.sumo.vehicle.getLaneID(veh)
-                acc = self.sumo.vehicle.getAccumulatedWaitingTime(veh)
-                if veh not in self.env.vehicles:
-                    self.env.vehicles[veh] = {veh_lane: acc}
-                else:
-                    self.env.vehicles[veh][veh_lane] = acc - sum(
-                        [self.env.vehicles[veh][lane] for lane in self.env.vehicles[veh].keys() if lane != veh_lane]
-                    )
-                wait_time.append(self.env.vehicles[veh][veh_lane])
-            wait_times_per_lane.append(wait_time)
-        return wait_times_per_lane
-    
-    def custom_reward(self):
-        """Custom reward function that uses the pressure reward as a benchmark
-        but penalizes based on the max waiting time of the lane 
-        and the frequency in which the lights have changed
-        """
-        waiting_times = self.waiting_time_per_lane()
-        max_waiting_time_per_lane = []
-        for lane_waiting_times in waiting_times:
-            if lane_waiting_times:
-                max_waiting_time_per_lane.append(max(lane_waiting_times))
-            else:
-                max_waiting_time_per_lane.append(0)
-        max_waiting_time = max(max_waiting_time_per_lane)
-        scaled_max_waiting_time = max_waiting_time / self.env.sim_max_time
-        
-        avg_phase_changes = []
-        for phase in range(self.num_green_phases):
-            if self.phases_changes[phase]:
-                avg_phase_changes.append(np.mean(self.phases_changes[phase]))
-        if avg_phase_changes:
-            min_avg_phase_change = min(avg_phase_changes)
-            freq_penalty = 1 - (min_avg_phase_change / self.env.sim_max_time)
-        else:
-            freq_penalty = 0
-
-        # Calculate the reward based on the pressure
-        # Scale it with the total length of the cross road
-        reward = 10 * (self.get_pressure() / self.total_length)
-        # Decrease it by the max amount that a car has been waiting
-        # reward -= 0.1 * scaled_max_waiting_time
-
-        # # Decrease the reward further based on how often the phases have changed
-        # # Penalize more frequent changes
-        reward -= 5 * freq_penalty
-        return reward
-
-
-def custom_reward_function(traffic_signal: CustomTrafficSignal):
-    """Custom reward function that uses the pressure reward as a benchmark
-    but penalizes based on the max waiting time of the lane 
-    and the frequency in which the lights have changed
-    """
-    return traffic_signal.custom_reward()
-
+from sumo_rl_environment.custom_traffic_light import CustomTrafficSignal
+from sumo_rl_environment.custom_functions import (
+    custom_reward_function,
+    queue_based_reward_function,
+    queue_based_reward2_function,
+    queue_based_reward3_function,
+    intelli_light_reward,
+    intelli_light_reward_prioritized,
+    intelli_light_prcol_reward,
+    CustomObservationFunction,
+    custom_waiting_time_reward
+) 
 
 LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
 
@@ -204,6 +60,7 @@ class CustomSumoEnvironment(SumoEnvironment):
         sumo_warnings: bool = True,
         additional_sumo_cmd: Optional[str] = None,
         render_mode: Optional[str] = None,
+        intelli_light_weight: dict = {}
     ) -> None:
         """Original init function of the SumoEnvironment class"""
         assert render_mode is None or render_mode in self.metadata["render_modes"], "Invalid render mode."
@@ -251,6 +108,7 @@ class CustomSumoEnvironment(SumoEnvironment):
 
         self.ts_ids = list(conn.trafficlight.getIDList())
         self.observation_class = observation_class
+        self.intelli_light_weight = intelli_light_weight
 
         if isinstance(self.reward_fn, dict):
             self.traffic_signals = {
@@ -264,6 +122,7 @@ class CustomSumoEnvironment(SumoEnvironment):
                     self.begin_time,
                     self.reward_fn[ts],
                     conn,
+                    intelli_light_weight=self.intelli_light_weight,
                 )
                 for ts in self.reward_fn.keys()
             }
@@ -279,6 +138,7 @@ class CustomSumoEnvironment(SumoEnvironment):
                     self.begin_time,
                     self.reward_fn,
                     conn,
+                    intelli_light_weight=self.intelli_light_weight,
                 )
                 for ts in self.ts_ids
             }
@@ -294,7 +154,33 @@ class CustomSumoEnvironment(SumoEnvironment):
         self.rewards = {ts: None for ts in self.ts_ids}
     
     
-    def __init__(self, net_file, route_file, begin_time, num_seconds, use_gui=False, out_csv_name=None):
+    
+    def __init__(self, net_file, route_file, begin_time, num_seconds, use_gui=False, out_csv_name=None,
+                 reward_fn: str = "intelli_light_reward",
+                 intelli_light_weight: dict = {}):
+        reward_mapping = {
+            "pressure": "pressure",
+            "intelli_light_reward" : intelli_light_reward,
+            "intelli_light_reward_prioritized": intelli_light_reward_prioritized,
+            "custom_waiting_time": custom_waiting_time_reward,
+            "intelli_light_prcol_reward": intelli_light_prcol_reward,
+        }
+        if not reward_fn:
+            reward_fn = "intelli_light_reward"
+        
+        additional_sumo_cmd = [
+            # "--device.rerouting.probability 1.0",
+            # "--device.rerouting.period 60",
+            # "--device.rerouting.adaptation-interval 10",
+            # "--device.rerouting.adaptation-weight 0.2",
+            "--tripinfo-output",
+        ]
+        # additional_sumo_cmd = "--tripinfo-output " \
+        #       "--device.rerouting.probability 1.0 " \
+        #       "--device.rerouting.period 60 " \
+        #       "--device.rerouting.adaptation-interval 10 " \
+        #       "--device.rerouting.adaptation-weight 0.2"
+
         self.super_init(
             net_file=net_file,
             route_file=route_file,
@@ -303,13 +189,116 @@ class CustomSumoEnvironment(SumoEnvironment):
             single_agent=False,
             add_per_agent_info=True,
             add_system_info=True,
-            # reward_fn='pressure',
             observation_class=CustomObservationFunction,
             use_gui=use_gui,
-            additional_sumo_cmd='--tripinfo-output',
-            reward_fn=custom_reward_function,
-            # out_csv_name=out_csv_name
+            additional_sumo_cmd=additional_sumo_cmd,
+            # out_csv_name=out_csv_name,
+            # reward_fn=custom_reward_function,
+            # reward_fn=queue_based_reward_function,
+            # reward_fn=queue_based_reward2_function,
+            # reward_fn=queue_based_reward3_function,
+            reward_fn=reward_mapping[reward_fn],
+            intelli_light_weight=intelli_light_weight,
         )
+        self.num_seconds = num_seconds
+    
+    def _start_simulation(self):
+        sumo_cmd = [
+            self._sumo_binary,
+            "-n",
+            self._net,
+            "-r",
+            self._route,
+            "--max-depart-delay",
+            str(self.max_depart_delay),
+            "--waiting-time-memory",
+            str(self.waiting_time_memory),
+            "--time-to-teleport",
+            str(self.time_to_teleport),
+        ]
+        if self.begin_time > 0:
+            sumo_cmd.append(f"-b {self.begin_time}")
+        if self.sumo_seed == "random":
+            sumo_cmd.append("--random")
+        else:
+            sumo_cmd.extend(["--seed", str(self.sumo_seed)])
+        if not self.sumo_warnings:
+            sumo_cmd.append("--no-warnings")
+        if self.additional_sumo_cmd is not None:
+            if isinstance(self.additional_sumo_cmd, str):
+                sumo_cmd.extend(self.additional_sumo_cmd.split())
+            elif isinstance(self.additional_sumo_cmd, list):
+                sumo_cmd.extend(self.additional_sumo_cmd)
+            else:
+                raise ValueError("additional_sumo_cmd must be a string or a list of strings.")
+        if self.use_gui or self.render_mode is not None:
+            sumo_cmd.extend(["--start", "--quit-on-end"])
+            if self.render_mode == "rgb_array":
+                sumo_cmd.extend(["--window-size", f"{self.virtual_display[0]},{self.virtual_display[1]}"])
+                from pyvirtualdisplay.smartdisplay import SmartDisplay
+
+                print("Creating a virtual display.")
+                self.disp = SmartDisplay(size=self.virtual_display)
+                self.disp.start()
+                print("Virtual display started.")
+
+        if LIBSUMO:
+            traci.start(sumo_cmd)
+            self.sumo = traci
+        else:
+            traci.start(sumo_cmd, label=self.label)
+            self.sumo = traci.getConnection(self.label)
+
+        if self.use_gui or self.render_mode is not None:
+            if "DEFAULT_VIEW" not in dir(traci.gui):  # traci.gui.DEFAULT_VIEW is not defined in libsumo
+                traci.gui.DEFAULT_VIEW = "View #0"
+            self.sumo.gui.setSchema(traci.gui.DEFAULT_VIEW, "real world")
+    
+    
+    def step(self, action: Union[dict, int]):
+        """Apply the action(s) and then step the simulation for delta_time seconds.
+
+        Args:
+            action (Union[dict, int]): action(s) to be applied to the environment.
+            If single_agent is True, action is an int, otherwise it expects a dict with keys corresponding to traffic signal ids.
+        """
+        observations, rewards, dones, info = super().step(action)
+        terminated = dones["__all__"]
+        truncated = terminated
+        # print(rewards)
+        # reward = np.mean(list(rewards.values()))
+        
+        # Can't use fairness because the bad one will always perform worse?
+        mean_reward = np.mean(list(rewards.values()))
+        # Fairness enhanced reward
+        # reward = 0
+        # alpha = 0.5
+        # for r in list(rewards.values()):
+        #     reward += (r - alpha * (r - mean_reward)**2) 
+
+        reward = mean_reward
+        return observations, reward, terminated, truncated, info
+    
+    @property
+    def action_space(self):
+        """Return the action space of a traffic signal.
+
+        Only used in case of single-agent environment.
+        """
+        if not self.single_agent:
+            return spaces.Dict({ts: self.traffic_signals[ts].action_space for ts in self.ts_ids})
+        return self.traffic_signals[self.ts_ids[0]].action_space
+    
+    
+    @property
+    def observation_space(self):
+        """Return the observation space of a traffic signal.
+
+        Only used in case of single-agent environment.
+        """
+        if not self.single_agent:
+            return spaces.Dict({ts: self.traffic_signals[ts].observation_space for ts in self.ts_ids})
+        return self.traffic_signals[self.ts_ids[0]].observation_space
     
     def get_observations_dict(self):
         """Returns the observation dict per traffic signal."""
@@ -346,6 +335,7 @@ class CustomSumoEnvironment(SumoEnvironment):
                     self.begin_time,
                     self.reward_fn[ts],
                     self.sumo,
+                    intelli_light_weight=self.intelli_light_weight,
                 )
                 for ts in self.reward_fn.keys()
             }
@@ -361,6 +351,7 @@ class CustomSumoEnvironment(SumoEnvironment):
                     self.begin_time,
                     self.reward_fn,
                     self.sumo,
+                    intelli_light_weight=self.intelli_light_weight,
                 )
                 for ts in self.ts_ids
             }
@@ -373,4 +364,48 @@ class CustomSumoEnvironment(SumoEnvironment):
         if self.single_agent:
             return self._compute_observations()[self.ts_ids[0]], self._compute_info()
         else:
-            return self._compute_observations()
+            return self._compute_observations(), self._compute_info()
+
+
+class BrokenLightEnvironment(CustomSumoEnvironment):
+    
+    def __init__(self, broken_light_start: int=None, broken_light_end: int=None, *args, **kwargs):
+        """Initialize the environment with a broken traffic light.
+
+        Args:
+            broken_light_start (int): time when the traffic light is broken.
+            broken_light_end (int): time when the traffic light is fixed.
+        """
+        super().__init__(*args, **kwargs)
+        self.broken_light_start = broken_light_start
+        self.broken_light_end = broken_light_end
+        self.broken_light_id = None            
+        self.broken_light_period_specified = self.broken_light_start is not None and self.broken_light_end is not None
+    
+    def step(self, action: Union[dict, int]):
+        """Apply the action(s) and then step the simulation for delta_time seconds.
+
+        Args:
+            action (Union[dict, int]): action(s) to be applied to the environment.
+            If single_agent is True, action is an int, otherwise it expects a dict with keys corresponding to traffic signal ids.
+        """
+        should_replace = False
+        if self.broken_light_period_specified:
+            if self.sim_step >= self.broken_light_start and self.sim_step <= self.broken_light_end:
+                should_replace = True
+        else:
+            should_replace = True
+        if should_replace:
+            if not self.broken_light_id:
+                tf_ids = list(action.keys())
+                middle = (len(tf_ids)-1) // 2
+                self.broken_light_id = tf_ids[middle]
+                print(f"Broken light id: {self.broken_light_id}")
+            # Override the actions to keep 1 stop light on red as if the junction was blocked
+            # TODO: update the logic so that this junction is only blocked for a certain amount of time
+            action[self.broken_light_id ] = -1
+        
+        
+        observations, reward, terminated, truncated, info = super().step(action)
+        return observations, reward, terminated, truncated, info
+    

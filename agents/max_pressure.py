@@ -40,12 +40,13 @@ class MaxPressureAgent:
             incoming_lanes = set()
             if len(phase.state) != len(controlled_lanes):
                 raise Exception("Failed to match lanes to phase state")
+            print(phase.state)
             for lane_state_index, lane_state_char in enumerate(str(phase.state)):
                 if lane_state_char.lower() == 'g':
                     lane = controlled_lanes[lane_state_index]
                     incoming_lanes.add(lane)
-            if not incoming_lanes:
-                raise Exception("No green lanes found for phase")
+            # if not incoming_lanes:
+                # raise Exception("No green lanes found for phase")
             outgoing_lanes = set()
             for lane in incoming_lanes:
                 for link in links:

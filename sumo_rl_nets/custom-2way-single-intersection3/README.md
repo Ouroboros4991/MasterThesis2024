@@ -1,0 +1,2 @@
+This folder is based on the 2way-single-intersection of sumo-rl/nets
+This intersection has a change traffic pattern, starting with a lot of traffic coming from the north before switching to a lot of traffic coming from the west

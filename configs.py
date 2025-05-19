@@ -14,6 +14,11 @@ ROUTE_SETTINGS = {
         "begin_time": 0,
         "end_time": 5000,
     },
+    "custom-2way-single-intersection3": {
+        "path": "sumo_rl_nets/custom-2way-single-intersection3/single-intersection.{type}.xml",
+        "begin_time": 0,
+        "end_time": 5000,
+    },
     "custom-2way-single-intersection-low": {
         "path": "sumo_rl_nets/custom-2way-single-intersection-low/single-intersection.{type}.xml",
         "begin_time": 0,
@@ -21,6 +26,16 @@ ROUTE_SETTINGS = {
     },
     "custom-2way-single-intersection-high": {
         "path": "sumo_rl_nets/custom-2way-single-intersection-high/single-intersection.{type}.xml",
+        "begin_time": 0,
+        "end_time": 1000,
+    },
+    "custom-2way-single-intersection-low-emergency": {
+        "path": "sumo_rl_nets/custom-2way-single-intersection-low-emergency/single-intersection.{type}.xml",
+        "begin_time": 0,
+        "end_time": 1000,
+    },
+    "custom-2way-single-intersection-high-emergency": {
+        "path": "sumo_rl_nets/custom-2way-single-intersection-high-emergency/single-intersection.{type}.xml",
         "begin_time": 0,
         "end_time": 1000,
     },
@@ -68,5 +83,35 @@ ROUTE_SETTINGS = {
         "path": "sumo_rl_nets/jinan/jinan.{type}.xml",
         "begin_time": 0,
         "end_time": 3600,
+    },
+    "3x3grid": {
+        "path": "sumo_rl_nets/3x3grid/3x3Grid2lanes.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,  # TODO: increase to 26000
+    },
+    "3x3grid-specialized": {
+        "path": "sumo_rl_nets/3x3grid-specialized/3x3Grid2lanes.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,  # TODO: increase to 26000
+    },
+    "3x3grid-specialized5": {
+        "path": "sumo_rl_nets/3x3grid-specialized5/3x3Grid2lanes.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,  # TODO: increase to 26000
+    },
+    "3x3grid-3lanes": {
+        "path": "sumo_rl_nets/3x3grid-3lanes/3x3Grid3lanes.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,  # TODO: increase to 26000
+    },
+    "3x3grid-3lanes2": {
+        "path": "sumo_rl_nets/3x3grid-3lanes2/3x3Grid3lanes.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,  # TODO: increase to 26000
+    },
+    "3x3grid-3lanes3": {
+        "path": "sumo_rl_nets/3x3grid-3lanes3/3x3Grid3lanes.{type}.xml",
+        "begin_time": 0,
+        "end_time": 3600,  # TODO: increase to 26000
     },
 }
