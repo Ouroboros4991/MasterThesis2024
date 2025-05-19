@@ -17,31 +17,27 @@ from sumo_rl_environment.custom_env import CustomSumoEnvironment, BrokenLightEnv
 from utils.experience_replay import ReplayBuffer
 from utils.sb3_logger import SB3Logger as Logger
 from utils import utils
+from utils import base_parser
 
 import time
 
 from configs import ROUTE_SETTINGS
 
-# TRAFFIC = "custom-2way-single-intersection3"
-# TRAFFIC = "cologne8"
-TRAFFIC = "3x3grid-3lanes2"
-SETTINGS = ROUTE_SETTINGS[TRAFFIC]
+# agents = {
+#     "option_critic": OptionCriticFeatures,
+#     "option_critic_forced": OptionCriticForced,
+#     "option_critic_nn": OptionCriticNeuralNetwork,
+# }
 
-agents = {
-    "option_critic": OptionCriticFeatures,
-    "option_critic_forced": OptionCriticForced,
-    "option_critic_nn": OptionCriticNeuralNetwork,
-}
+parser = base_parser.generate_base_parser()
 
-parser = argparse.ArgumentParser(description="Option Critic PyTorch")
-
-parser.add_argument(
-    "--agent",
-    type=str,
-    default="option_critic",
-    choices=agents.keys(),
-    help="Agent to use",
-)
+# parser.add_argument(
+#     "--agent",
+#     type=str,
+#     default="option_critic",
+#     choices=agents.keys(),
+#     help="Agent to use",
+# )
 parser.add_argument(
     "--optimal-eps", type=float, default=0.05, help="Epsilon when playing optimally"
 )
@@ -121,16 +117,22 @@ parser.add_argument(
     "--hd_reg", action="store_true", help="Apply Hellinger Distance Regularization"
 )
 
-parser.add_argument(
-    "--start_min_policy_length", type=int, default=4, help="Ensure that the option policy runs for at least n steps when starting the training"
-)
+# parser.add_argument(
+#     "--start_min_policy_length",
+#     type=int,
+#     default=4,
+#     help="Ensure that the option policy runs for at least n steps when starting the training",
+# )
+
 
 def get_lanes_density(env):
     """Returns the density [0,1] of the vehicles in the incoming lanes of the intersection.
 
     Obs: The density is computed as the number of vehicles divided by the number of vehicles that could fit in the lane.
     """
-    lanes_density = [tf.get_lanes_density() for tf in list(env.traffic_signals.values())]
+    lanes_density = [
+        tf.get_lanes_density() for tf in list(env.traffic_signals.values())
+    ]
     result = 0
     for item in lanes_density:
         result += sum(item)
@@ -138,31 +140,17 @@ def get_lanes_density(env):
 
 
 def run(args):
-    route_file = SETTINGS["path"]
-    start_time = SETTINGS["begin_time"]
-    end_time = SETTINGS["end_time"]
-    duration = end_time - start_time
-    experiment_name = f"{args.agent}_{args.num_options}_options_{TRAFFIC}"
+
+    experiment_name = f"option_critic_nn_{args.num_options}_options_{args.traffic}"
     if args.hd_reg:
         experiment_name += "_hd_reg"
-    # delta_time (int) – Simulation seconds between actions. Default: 5 seconds
-    env = BrokenLightEnvironment(
-        net_file=route_file.format(type="net"),
-        route_file=route_file.format(type="rou"),
-        # single_agent=True,
-        begin_time=start_time,
-        num_seconds=duration,
-        intelli_light_weight={
-            "delay": 3,
-            "waiting_time": 3,
-            "light_switches": 2,
-            "out_lanes_availability": 1
-        },
-        broken_light_start=1000,
-        broken_light_end=1500,
-        reward_fn="intelli_light_prcol_reward",
+    env = utils.setup_env(
+        args.traffic,
+        args.reward_fn,
+        broken=args.broken,
+        target_model="option_critic",
+        broken_mode="partial",
     )
-    env = utils.DictToFlatActionWrapper(env)
     env.reset()
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
@@ -181,7 +169,9 @@ def run(args):
     option_critic_prime = deepcopy(option_critic)
 
     # optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
-    optim = torch.optim.Adam(option_critic.parameters(), lr=args.learning_rate, weight_decay=0.01)
+    optim = torch.optim.Adam(
+        option_critic.parameters(), lr=args.learning_rate, weight_decay=0.01
+    )
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -194,23 +184,24 @@ def run(args):
         tb_log_name=f"{experiment_name}-{time.ctime()}",
     )
 
+    num_episodes = int(args.max_steps_total / env.num_seconds) * 5
+
     steps = 0
-    while steps < args.max_steps_total:
+    for episode in range(num_episodes):
         done = False
         episode = 0
         steps_since_last_update = 0
         cumulative_rewards = 0
 
-        obs, _ = env.reset()        
-        
-        logger.start_episode(steps) 
+        obs, _ = env.reset()
+
+        logger.start_episode(steps)
         option_termination_states = {o: [] for o in range(args.num_options)}
         option_critic.reset()
 
         while not done:
             current_option = option_critic.current_option
             density = get_lanes_density(env)
-
 
             state = option_critic.prep_state(obs)
             action, additional_info = option_critic.get_action(state)
@@ -237,7 +228,7 @@ def run(args):
                     option_critic,
                     option_critic_prime,
                     args,
-                    option_densities=option_termination_states
+                    option_densities=option_termination_states,
                 )
                 loss = actor_loss
 
@@ -265,11 +256,9 @@ def run(args):
             num_timesteps=steps,
             iteration=episode,
             reward=cumulative_rewards,
-            option_lengths=option_critic.option_lengths
+            option_lengths=option_critic.option_lengths,
         )
-        episode += 1
         # min_option_length = min_option_length * args.policy_length_decay
-        
 
     # torch.save(
     #     {"model_params": option_critic.state_dict()},

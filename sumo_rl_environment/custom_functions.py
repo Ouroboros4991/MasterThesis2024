@@ -5,18 +5,14 @@ This to ensure that the different training scripts can use the same environment.
 
 from typing import List
 from collections import deque
-import os
-from typing import Callable, Optional, Tuple, Union
 import numpy as np
-import traci
-import sumolib
 
 from gymnasium import spaces
-from sumo_rl import SumoEnvironment
-from sumo_rl.environment.observations import ObservationFunction, DefaultObservationFunction
+from sumo_rl.environment.observations import ObservationFunction
 from sumo_rl.environment.traffic_signal import TrafficSignal
 
 from sumo_rl_environment.custom_traffic_light import CustomTrafficSignal
+
 
 class CustomObservationFunction(ObservationFunction):
     """Default observation function for traffic signals."""
@@ -28,8 +24,7 @@ class CustomObservationFunction(ObservationFunction):
         self.phase_id_buffer = None
         self.queue_history_len = 10
         self.previous_queue_lengths = None
-        
-    
+
     def custom_get_lanes_queue(self) -> List[float]:
         """Returns the queue [0,100] of the vehicles in the incoming lanes of the intersection.
 
@@ -38,14 +33,17 @@ class CustomObservationFunction(ObservationFunction):
         ts = self.ts
         lanes_queue = [
             ts.sumo.lane.getLastStepHaltingNumber(lane)
-            / (ts.lanes_length[lane] / (ts.MIN_GAP + ts.sumo.lane.getLastStepLength(lane)))
+            / (
+                ts.lanes_length[lane]
+                / (ts.MIN_GAP + ts.sumo.lane.getLastStepLength(lane))
+            )
             for lane in ts.lanes
         ]
         return [min(100, queue * 100) for queue in lanes_queue]
 
     def waiting_time_per_lane(self):
         """Returns the waiting time of all vehicles per lane
-        
+
         Returns as list of lists
         """
         ts = self.ts
@@ -61,24 +59,28 @@ class CustomObservationFunction(ObservationFunction):
                     ts.env.vehicles[veh] = {veh_lane: acc}
                 else:
                     ts.env.vehicles[veh][veh_lane] = acc - sum(
-                        [ts.env.vehicles[veh][lane] for lane in ts.env.vehicles[veh].keys() if lane != veh_lane]
+                        [
+                            ts.env.vehicles[veh][lane]
+                            for lane in ts.env.vehicles[veh].keys()
+                            if lane != veh_lane
+                        ]
                     )
                 wait_time.append(ts.env.vehicles[veh][veh_lane])
             wait_times_per_lane.append(wait_time)
         return wait_times_per_lane
-    
-    
+
     def get_observations_dict(self) -> dict:
-        """Generates the observation as dictionary
-        """
+        """Generates the observation as dictionary"""
         if self.phase_id_buffer is None:
             # num_green_phases is only instantiated later
-            self.phase_id_buffer = {i: deque([0] * 4, maxlen=4) for i in range(self.ts.num_green_phases)}
-            self.previous_queue_lengths = {i: deque([0] * self.queue_history_len, maxlen=self.queue_history_len)
-                                           for i in range(len(self.ts.lanes))}
+            self.phase_id_buffer = {
+                i: deque([0] * 4, maxlen=4) for i in range(self.ts.num_green_phases)
+            }
+            self.previous_queue_lengths = {
+                i: deque([0] * self.queue_history_len, maxlen=self.queue_history_len)
+                for i in range(len(self.ts.lanes))
+            }
 
-        current_time = [self.ts.sumo.simulation.getTime()]
-        
         current_phase_ids = []
         for phase in range(self.ts.num_green_phases):
             if self.ts.green_phase == phase:
@@ -91,23 +93,30 @@ class CustomObservationFunction(ObservationFunction):
         for phase in range(self.ts.num_green_phases):
             hist_phase_ids.extend(list(self.phase_id_buffer[phase]))
         # phase_id = [1 if self.ts.green_phase == i else 0 for i in range(self.ts.num_green_phases)]  # one-hot encoding
-        
-        min_green = [0 if self.ts.time_since_last_phase_change < self.ts.min_green + self.ts.yellow_time else 1]
+
+        min_green = [
+            (
+                0
+                if self.ts.time_since_last_phase_change
+                < self.ts.min_green + self.ts.yellow_time
+                else 1
+            )
+        ]
         density = self.ts.get_lanes_density()
         # queue = self.ts.get_lanes_queue()
         queue = self.custom_get_lanes_queue()
         # if not self.previous_queue_length:
         #     self.previous_queue_length = [0] * len(queue)
-        # delta_queue = [queue[i]- self.previous_queue_length[i] for i in range(len(queue))]  
+        # delta_queue = [queue[i]- self.previous_queue_length[i] for i in range(len(queue))]
         # self.previous_queue_length = queue
         queue_der = []  # TODO rename to derivative of queue
-        for i, l in enumerate(queue):
-            self.previous_queue_lengths[i].append(l)
+        for i, q_length in enumerate(queue):
+            self.previous_queue_lengths[i].append(q_length)
             queue_diff = np.diff(self.previous_queue_lengths[i])
             # delta_queue.append(np.mean(queue_diff)) # THis seems to have collapsed the oc into only doing 1 action
             queue_der.extend(queue_diff)
         waiting_times = self.waiting_time_per_lane()
-        
+
         return {
             # "current_time": current_time,
             "current_phase_ids": current_phase_ids,
@@ -119,14 +128,12 @@ class CustomObservationFunction(ObservationFunction):
             "queue_der": queue_der,
             "waiting_times": waiting_times,
             # "avg_waiting_time": [np.mean(waiting_time) for waiting_time in waiting_times],
-            "average_speed": self.ts.get_average_speed()
+            "average_speed": self.ts.get_average_speed(),
         }
-        
-        
+
     @staticmethod
     def get_observation_arr(observation_dict: dict) -> np.ndarray:
-        """Generates the observation as array
-        """
+        """Generates the observation as array"""
         # current_time = observation_dict["current_time"]
         phase_ids = observation_dict["current_phase_ids"]
         # phase_ids = observation_dict["hist_phase_ids"]
@@ -155,13 +162,18 @@ class CustomObservationFunction(ObservationFunction):
     def observation_space(self) -> spaces.Box:
         """Return the observation space."""
         return spaces.Box(
-            low=np.zeros((self.ts.num_green_phases) + (2 * len(self.ts.lanes)) , dtype=np.float32),
-            high=np.ones((self.ts.num_green_phases) + (2 * len(self.ts.lanes)), dtype=np.float32),
+            low=np.zeros(
+                (self.ts.num_green_phases) + (2 * len(self.ts.lanes)), dtype=np.float32
+            ),
+            high=np.ones(
+                (self.ts.num_green_phases) + (2 * len(self.ts.lanes)), dtype=np.float32
+            ),
         )
+
 
 def custom_reward_function(traffic_signal: CustomTrafficSignal):
     """Custom reward function that uses the pressure reward as a benchmark
-    but penalizes based on the max waiting time of the lane 
+    but penalizes based on the max waiting time of the lane
     and the frequency in which the lights have changed
     """
     return traffic_signal.custom_reward()
@@ -169,7 +181,7 @@ def custom_reward_function(traffic_signal: CustomTrafficSignal):
 
 def queue_based_reward_function(traffic_signal: CustomTrafficSignal):
     """Custom reward function that uses the pressure reward as a benchmark
-    but penalizes based on the max waiting time of the lane 
+    but penalizes based on the max waiting time of the lane
     and the frequency in which the lights have changed
     """
     return traffic_signal.queue_based_reward()
@@ -177,16 +189,15 @@ def queue_based_reward_function(traffic_signal: CustomTrafficSignal):
 
 def queue_based_reward2_function(traffic_signal: CustomTrafficSignal):
     """Custom reward function that uses the pressure reward as a benchmark
-    but penalizes based on the max waiting time of the lane 
+    but penalizes based on the max waiting time of the lane
     and the frequency in which the lights have changed
     """
     return traffic_signal.queue_based_reward2()
 
 
-
 def queue_based_reward3_function(traffic_signal: CustomTrafficSignal):
     """Custom reward function that uses the pressure reward as a benchmark
-    but penalizes based on the max waiting time of the lane 
+    but penalizes based on the max waiting time of the lane
     and the frequency in which the lights have changed
     """
     return traffic_signal.queue_based_reward3()

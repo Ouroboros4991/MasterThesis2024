@@ -3,8 +3,6 @@
 """
 
 import torch
-import torch.nn as nn
-from torch.distributions import Categorical, Bernoulli
 
 import math
 import itertools

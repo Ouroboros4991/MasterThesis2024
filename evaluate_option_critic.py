@@ -1,9 +1,7 @@
-"""Evaluate the provided model using the given environment.
-"""
+"""Evaluate the provided model using the given environment."""
 
-# TODO: add logic to 
+# TODO: add logic to
 
-import argparse
 import json
 import pathlib
 
@@ -14,7 +12,6 @@ import torch
 from configs import ROUTE_SETTINGS
 from agents import option_critic_nn
 from sumo_rl_environment.custom_env import CustomSumoEnvironment
-from utils import utils
 
 # Example of the info payload
 # {
@@ -39,11 +36,11 @@ def run_episode(env, agent):
 
     obs = env.reset()
     current_option = 0
-    
+
     traffic_light_id = list(obs.keys())[0]
-    
+
     # TODO: update for multi agent setup
-    obs = obs[traffic_light_id]        
+    obs = obs[traffic_light_id]
     encoded_option = np.zeros(num_options)
     encoded_option[current_option] = 1
     obs = np.append(obs, encoded_option)
@@ -58,11 +55,9 @@ def run_episode(env, agent):
     option_termination = True
     state = agent.get_state(obs)
     greedy_option = agent.greedy_option(state)
-    min_option_length = 4
     while not terminate:
         if option_termination:
             current_option = greedy_option
-            
 
         state = agent.get_state(obs)
         action, logp, entropy = agent.get_action(state, current_option)
@@ -77,21 +72,18 @@ def run_episode(env, agent):
 
         state = agent.get_state(next_obs)
         # TODO: include min length
-        option_termination, greedy_option = (
-            agent.predict_option_termination(state, current_option)
+        option_termination, greedy_option = agent.predict_option_termination(
+            state, current_option
         )
-    
-        termination_prob = agent.get_terminations(state)[
-            :, current_option
-        ].tolist()[0]
-        
+
+        termination_prob = agent.get_terminations(state)[:, current_option].tolist()[0]
+
         reward_arr = [reward]
         cumulative_reward += np.mean(reward_arr)
         mean_waiting_time = info["system_mean_waiting_time"]
         mean_speed = info["system_mean_speed"]
         lane_density = np.sum(
-            [sum(ts.get_lanes_density())
-             for ts in env.traffic_signals.values()]
+            [sum(ts.get_lanes_density()) for ts in env.traffic_signals.values()]
         )
         queue_length = np.sum(
             [ts.get_total_queued() for ts in env.traffic_signals.values()]
@@ -134,7 +126,6 @@ def single_episodes(env, agent, prefix):
 
 def multiple_episodes(env, agent, prefix):
     n_episodes = 100
-    average_cumulative_reward = 0.0
     results = []
 
     for episode_number in range(n_episodes):
@@ -236,7 +227,7 @@ def main(traffic: str, model: str):
     )
     env.reset()
     prefix = f"{model}_{traffic}"
-    
+
     agent = option_critic_nn.OptionCriticNeuralNetwork(
         env=env,
         num_options=10,
@@ -252,17 +243,17 @@ def main(traffic: str, model: str):
             "./models/option_critic_nn_10_options_custom-2way-single-intersection_100800_steps"
         )["model_params"]
     )
-    
+
     single_episodes(env, agent, prefix)
     # multiple_episodes(env, agent, prefix)
 
 
 if __name__ == "__main__":
     pathlib.Path("./evaluations").mkdir(parents=True, exist_ok=True)
-    # parser.add_argument('-m', '--model', required=True) 
+    # parser.add_argument('-m', '--model', required=True)
     # parser.add_argument('-t', '--traffic',
     #                     choices=possible_scenarios,
-    #                     required=True) 
+    #                     required=True)
     # args = parser.parse_args()
 
     # if args.traffic == 'all':

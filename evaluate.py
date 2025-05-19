@@ -1,5 +1,4 @@
-"""Evaluate the provided model using the given environment.
-"""
+"""Evaluate the provided model using the given environment."""
 
 import argparse
 import json
@@ -7,10 +6,8 @@ import pathlib
 
 import numpy as np
 import pandas as pd
-import torch
 
 from configs import ROUTE_SETTINGS
-from sumo_rl_environment.custom_env import CustomSumoEnvironment
 from utils import utils
 
 # Example of the info payload
@@ -47,13 +44,13 @@ def run_episode(env, agent):
     current_option = 0
     try:
         state = agent.prep_state(obs)
-    except Exception as e:
+    except Exception:
         pass
     while not terminate:
         try:
             action_dict, _states = agent.predict(obs)
             action = action_dict
-        except AttributeError as e:
+        except AttributeError:
             # Option critic
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
@@ -71,8 +68,7 @@ def run_episode(env, agent):
         mean_waiting_time = info["system_mean_waiting_time"]
         mean_speed = info["system_mean_speed"]
         lane_density = np.sum(
-            [sum(ts.get_lanes_density())
-             for ts in env.traffic_signals.values()]
+            [sum(ts.get_lanes_density()) for ts in env.traffic_signals.values()]
         )
         queue_length = np.sum(
             [ts.get_total_queued() for ts in env.traffic_signals.values()]
@@ -80,14 +76,14 @@ def run_episode(env, agent):
 
         average_cumulative_reward *= 0.95
         average_cumulative_reward += 0.05 * cumulative_reward
-        
+
         try:
             current_option = agent.current_option
             option_termination = additional_info["termination"]
             greedy_option = additional_info["greedy_option"]
-        except Exception as e:
+        except Exception:
             current_option = 0
-        
+
         obs_dict = env.get_observations_dict()
         for _, value in obs_dict.items():
             value["queue_der"] = [float(item) for item in value["queue_der"]]
@@ -114,7 +110,7 @@ def run_episode(env, agent):
     return results
 
 
-def single_episodes(env, agent, prefix, save: bool=True):
+def single_episodes(env, agent, prefix, save: bool = True):
     print("Running single episode")
     results = run_episode(env, agent)
     if save:
@@ -126,7 +122,7 @@ def single_episodes(env, agent, prefix, save: bool=True):
     return results
 
 
-def multiple_episodes(env, agent, prefix, n_episodes: int=100, save: bool=True):
+def multiple_episodes(env, agent, prefix, n_episodes: int = 100, save: bool = True):
     results = []
 
     for episode_number in range(n_episodes):
@@ -214,10 +210,15 @@ def multiple_episodes(env, agent, prefix, n_episodes: int=100, save: bool=True):
     return results
 
 
-def main(traffic: str, model: str, broken: bool = False):
-    env = utils.create_env(traffic, reward_fn="pressure", broken=broken)
-    if model.startswith("a2c") or model.startswith("option_critic"):
-        env = utils.DictToFlatActionWrapper(env)
+def main(traffic: str, model: str, broken: bool = False, broken_mode: str = "full"):
+    env = utils.setup_env(
+        traffic,
+        reward_fn="pressure",
+        reward_weights={},
+        broken=broken,
+        target_model=model,
+        broken_mode=broken_mode,
+    )
     if broken:
         prefix = f"{model}_broken_{traffic}"
     else:
@@ -231,25 +232,36 @@ if __name__ == "__main__":
     pathlib.Path("./evaluations").mkdir(parents=True, exist_ok=True)
 
     possible_scenarios = list(ROUTE_SETTINGS.keys())
-    possible_scenarios.append('all')
+    possible_scenarios.append("all")
     parser = argparse.ArgumentParser(
-                    description='Evaluate the provided model using the given traffic scenario.',
-                    )
-    parser.add_argument('-m', '--model', required=True) 
-    parser.add_argument('-t', '--traffic',
-                        choices=possible_scenarios,
-                        required=True) 
-    parser.add_argument('-b', '--broken',
-                        action='store_true',
-                        help='Use broken traffic lights')
+        description="Evaluate the provided model using the given traffic scenario.",
+    )
+    parser.add_argument("-m", "--model", required=True)
+    parser.add_argument("-t", "--traffic", choices=possible_scenarios, required=True)
+    parser.add_argument(
+        "-b", "--broken", action="store_true", help="Use broken traffic lights"
+    )
+    parser.add_argument(
+        "-bm",
+        "--broken-mode",
+        type=str,
+        help="Define broken mode. Defaults to full broken mode",
+        default="full",
+    )
     args = parser.parse_args()
 
-    if args.traffic == 'all':
-        for scenario in ["cologne1", "cologne3", "cologne8",
-                         "ingolstadt1", "ingolstadt7", "ingolstadt21",
-                         "hangzhou_1x1_bc-tyc_18041607_1h", "jinan"]:
-        # for scenario in ROUTE_SETTINGS.keys():
+    if args.traffic == "all":
+        for scenario in [
+            "cologne1",
+            "cologne3",
+            "cologne8",
+            "ingolstadt1",
+            "ingolstadt7",
+            "ingolstadt21",
+            "hangzhou_1x1_bc-tyc_18041607_1h",
+            "jinan",
+        ]:
+            # for scenario in ROUTE_SETTINGS.keys():
             main(scenario, args.model)
     else:
-        main(args.traffic, args.model, args.broken)
-            
+        main(args.traffic, args.model, args.broken, args.broken_mode)

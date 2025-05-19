@@ -1,18 +1,14 @@
 # Based on the code found here: https://github.com/lweitkamp/option-critic-pytorch/blob/master/option_critic.py
 
 import itertools
-import joblib
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical, Bernoulli
+from torch.distributions import Categorical
 
 from math import exp
-import numpy as np
 
 from agents.option_critic_utils import to_tensor
 from agents.option_networks import ReluNetwork
-from agents.option_networks import TerminationFunctionNetwork
-from agents.option_networks import QNetwork
 
 
 class CustomActorCritic(nn.Module):

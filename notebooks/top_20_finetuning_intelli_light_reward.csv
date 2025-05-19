@@ -1,0 +1,21 @@
+config,total_avg_reward,total_avg_hd_distance
+"{""delay"": 2, ""waiting_time"": 10, ""light_switches"": 2}",-299.43,0.23254474902738842
+"{""delay"": 1, ""waiting_time"": 10, ""light_switches"": 3}",-303.089125,0.25307047607592287
+"{""delay"": 1, ""waiting_time"": 10, ""light_switches"": 2}",-304.878375,0.25698376285695806
+"{""delay"": 0, ""waiting_time"": 10, ""light_switches"": 0}",-307.044125,0.44984414071806095
+"{""delay"": 2, ""waiting_time"": 10, ""light_switches"": 3}",-309.1015,0.322839727634884
+"{""delay"": 1, ""waiting_time"": 10, ""light_switches"": 0}",-316.90124999999995,0.3924391485006906
+"{""delay"": 0, ""waiting_time"": 10, ""light_switches"": 1}",-321.80987500000003,0.431640805154778
+"{""delay"": 3, ""waiting_time"": 10, ""light_switches"": 0}",-323.86575,0.3881995341797959
+"{""delay"": 0, ""waiting_time"": 10, ""light_switches"": 2}",-329.5025,0.4247956444802906
+"{""delay"": 2, ""waiting_time"": 10, ""light_switches"": 0}",-330.41700000000003,0.39083998715074336
+"{""delay"": 0, ""waiting_time"": 10, ""light_switches"": 3}",-344.4785,0.3301479187858042
+"{""delay"": 3, ""waiting_time"": 3, ""light_switches"": 2}",-345.65125,0.40722432400478825
+"{""delay"": 3, ""waiting_time"": 10, ""light_switches"": 2}",-355.111,0.34173534559113666
+"{""delay"": 1, ""waiting_time"": 10, ""light_switches"": 1}",-356.808125,0.39828174808119166
+"{""delay"": 2, ""waiting_time"": 10, ""light_switches"": 1}",-358.54312500000003,0.19112489017490195
+"{""delay"": 3, ""waiting_time"": 10, ""light_switches"": 3}",-368.52149999999995,0.35862956974135785
+"{""delay"": 3, ""waiting_time"": 0, ""light_switches"": 0}",-371.55837499999996,0.3135608647129225
+"{""delay"": 3, ""waiting_time"": 0, ""light_switches"": 0}",-371.55837499999996,0.3135608647129225
+"{""delay"": 3, ""waiting_time"": 10, ""light_switches"": 1}",-372.033875,0.36595468031742573
+"{""delay"": 2, ""waiting_time"": 1, ""light_switches"": 0}",-372.248125,0.40973548113075275

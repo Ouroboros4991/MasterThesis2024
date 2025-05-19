@@ -29,8 +29,61 @@ TODO: remove default as it does not take into account the delay caused by the ye
 https://github.com/lweitkamp/option-critic-pytorch
 
 
+# Commands used to run experiments:
 
-# Command used to generate 3x3 grid
+### 1.1: Fine-tune reward
+
+```
+python finetune_reward.py -r intelli_light_reward
+```
+
+### 1.2: A2C training
+
+Training: 
+```
+python a2c.py -t custom-2way-single-intersection-low -s 100000 -r intelli_light_reward
+python a2c.py -t custom-2way-single-intersection-high -s 100000 -r intelli_light_reward
+```
+
+Evaluation: 
+```
+python evaluate.py -t custom-2way-single-intersection-low -m a2c_custom-2way-single-intersection-low_100000_stepsintelli_light_reward_delay_2_waiting_time_10_light_switches_3;
+python evaluate.py -t custom-2way-single-intersection-low -m a2c_custom-2way-single-intersection-high_100000_stepsintelli_light_reward_delay_2_waiting_time_10_light_switches_3;
+python evaluate.py -t custom-2way-single-intersection-high -m a2c_custom-2way-single-intersection-low_100000_stepsintelli_light_reward_delay_2_waiting_time_10_light_switches_3;
+python evaluate.py -t custom-2way-single-intersection-high -m a2c_custom-2way-single-intersection-high_100000_stepsintelli_light_reward_delay_2_waiting_time_10_light_switches_3;
+```
+
+Investigation
+
+
+### 1.3 Option-critic training
+
+Training:
+```
+
+python option_critic_training.py -t custom-2way-single-intersection3 -r intelli_light_reward  --max_steps_total 250000 --num_options 2
+python option_critic_training_curriculum.py -t custom-2way-single-intersection3 -r intelli_light_reward  --max_steps_total 250000 --num_options 2
+
+```
+
+Evaluation:
+```
+python evaluate.py -t custom-2way-single-intersection3 -m option_critic_nn_2_options_custom-2way-single-intersection3_250000_steps;
+python evaluate.py -t custom-2way-single-intersection3 -m option_critic_curriculum_nn_2_options_custom-2way-single-intersection3_250000_steps;
+```
+
+### Visualization
+
+Important for the visualisation is that you do not set the traci environment variable.
+
+```
+python visualize_sumo.py -t custom-2way-single-intersection3 -m option_critic_nn_curriculum_2_options_custom-2way-single-intersection3_250000_steps
+```
+
+# Experiment 2
+
+### Command used to generate 3x3 grid
+
 
 tls.set: defines which traffic lights are controllable
 
@@ -76,3 +129,44 @@ duarouter \
   -t 3x3Grid3lanes.trips.xml \
   -o 3x3Grid3lanes.rou.xml \
   --ignore-errors true
+
+### 2.1: Fine-tune reward
+
+```
+python finetune_reward.py -r intelli_light_prcol_reward
+```
+
+### 2.2: A2C Training
+
+Training
+
+```
+python a2c.py -t 3x3grid-3lanes2 -s 250000 -r intelli_light_prcol_reward 
+python a2c.py -t 3x3grid-3lanes2 -s 250000 -r intelli_light_prcol_reward -b
+```
+
+Evaluate
+
+```
+python evaluate.py -t 3x3grid-3lanes2 -m a2c_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_2_waiting_time_10_light_switches_3_out_lanes_availability_1;
+python evaluate.py -t 3x3grid-3lanes2 -m a2c_broken_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_2_waiting_time_10_light_switches_3_out_lanes_availability_1;
+python evaluate.py -t 3x3grid-3lanes2 -b -m a2c_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_2_waiting_time_10_light_switches_3_out_lanes_availability_1;
+python evaluate.py -t 3x3grid-3lanes2 -b -m a2c_broken_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_2_waiting_time_10_light_switches_3_out_lanes_availability_1;
+```
+
+
+### 2.3 Option critic training
+
+
+```
+
+python option_critic_training.py -t 3x3grid-3lanes2 --broken -r intelli_light_prcol_reward  --max_steps_total 250000 --num_options 2
+python option_critic_training_curriculum.py -t 3x3grid-3lanes2 --broken -r intelli_light_prcol_reward  --max_steps_total 250000 --num_options 2
+
+```
+
+Evaluation:
+```
+python evaluate.py -t 3x3grid-3lanes2 --broken --broken-mode partial -m option_critic_nn_2_options_3x3grid-3lanes2_248400_steps;
+python evaluate.py -t 3x3grid-3lanes2 --broken --broken-mode partial -m option_critic_nn_curriculum_2_options_3x3grid-3lanes2_248400_steps;
+```
