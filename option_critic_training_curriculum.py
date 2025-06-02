@@ -111,12 +111,11 @@ parser.add_argument(
     "--hd_reg", action="store_true", help="Apply Hellinger Distance Regularization"
 )
 
-# parser.add_argument(
-#     "--start_min_policy_length",
-#     type=int,
-#     default=4,
-#     help="Ensure that the option policy runs for at least n steps when starting the training",
-# )
+parser.add_argument(
+    "--start_min_policy_length",
+    type=int,
+    help="Ensure that the option policy runs for at least n steps when starting the training",
+)
 
 
 def get_lanes_density(env):
@@ -148,6 +147,9 @@ def run(args):
         f"option_critic_nn_curriculum_{args.num_options}_options_{args.traffic}"
         # + "_weights_d3_w3_ls2_ola1"
     )
+    if args.start_min_policy_length:
+        experiment_name += f"_start_min_policy_length_{args.start_min_policy_length}"
+
     if args.hd_reg:
         experiment_name += "_hd_reg"
     env = utils.setup_env(
@@ -176,7 +178,7 @@ def run(args):
         eps_decay=args.epsilon_decay,
         eps_test=args.optimal_eps,
         device=device,
-        # start_min_policy_length=args.start_min_policy_length,
+        start_min_policy_length=args.start_min_policy_length,
     )
     # Create a prime network for more stable Q values
     option_critic_prime = deepcopy(option_critic)

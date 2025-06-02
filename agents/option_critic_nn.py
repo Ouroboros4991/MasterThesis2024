@@ -26,7 +26,7 @@ class OptionCriticNeuralNetwork(nn.Module):
         eps_test=0.05,
         device="cpu",
         testing=False,
-        # start_min_policy_length=None,
+        start_min_policy_length=None,
     ):
 
         super(OptionCriticNeuralNetwork, self).__init__()
@@ -77,7 +77,7 @@ class OptionCriticNeuralNetwork(nn.Module):
 
         self.to(device)
         self.train(not testing)
-        # self.start_min_policy_length = start_min_policy_length
+        self.start_min_policy_length = start_min_policy_length
 
         self.reset()
 
@@ -192,9 +192,9 @@ class OptionCriticNeuralNetwork(nn.Module):
             state, self.current_option
         )
         should_terminate = option_termination
-        # if self.start_min_policy_length:
-        #     if self.curr_op_len < self.start_min_policy_length:
-        #         should_terminate = False
+        if self.start_min_policy_length:
+            if self.curr_op_len < self.start_min_policy_length:
+                should_terminate = False
         if should_terminate:
 
             # density = self.get_lanes_density(self.env)

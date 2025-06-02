@@ -407,6 +407,5 @@ class CustomTrafficSignal(TrafficSignal):
         reward = cars_leaving
         for key, value in rewards.items():
             reward_weight = self.reward_weights.get(key, 1)
-            # print(key, value, reward_weight)
             reward -= reward_weight * value
         return reward
