@@ -36,7 +36,7 @@ parser = base_parser.generate_base_parser()
 parser.add_argument(
     "--optimal-eps", type=float, default=0.05, help="Epsilon when playing optimally"
 )
-parser.add_argument("--learning-rate", type=float, default=0.0001, help="Learning rate")
+parser.add_argument("--learning-rate", type=float, default=0.001, help="Learning rate")
 parser.add_argument("--gamma", type=float, default=0.99, help="Discount rate")
 parser.add_argument(
     "--epsilon-start", type=float, default=1.0, help=("Starting value for epsilon.")
@@ -51,10 +51,10 @@ parser.add_argument(
 parser.add_argument(
     "--max-history",
     type=int,
-    default=10000,
+    default=100000,
     help=("Maximum number of steps stored in replay"),
 )
-parser.add_argument("--batch-size", type=int, default=32, help="Batch size.")
+parser.add_argument("--batch-size", type=int, default=2000, help="Batch size.")
 parser.add_argument(
     "--freeze-interval",
     type=int,
@@ -64,7 +64,7 @@ parser.add_argument(
 parser.add_argument(
     "--update-frequency",
     type=int,
-    default=4,
+    default=250,
     help=("Number of actions before each SGD update."),
 )
 parser.add_argument(
@@ -76,7 +76,7 @@ parser.add_argument(
 parser.add_argument(
     "--entropy-reg",
     type=float,
-    default=0.01,
+    default=0.1,
     help=("Regularization to increase policy entropy."),
 )
 parser.add_argument(
@@ -85,7 +85,7 @@ parser.add_argument(
 parser.add_argument(
     "--temp",
     type=float,
-    default=1,
+    default=2,
     help="Action distribution softmax tempurature param.",
 )
 
@@ -145,7 +145,7 @@ def get_lanes_max_queue(env):
 
 def run(args):
     experiment_name = (
-        f"option_critic_discrete_{args.num_options}_options_{args.traffic}"
+        f"option_critic_nn_curriculum_{args.num_options}_options_{args.traffic}"
     )
     if args.start_min_policy_length:
         experiment_name += f"_start_min_policy_length_{args.start_min_policy_length}"
@@ -186,10 +186,9 @@ def run(args):
     option_critic_prime = deepcopy(option_critic)
 
     # optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
-    # optim = torch.optim.Adam(
-    #     option_critic.parameters(), lr=args.learning_rate, weight_decay=0.01
-    # )
-    optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
+    optim = torch.optim.Adam(
+        option_critic.parameters(), lr=args.learning_rate, weight_decay=0.01
+    )
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -211,6 +210,8 @@ def run(args):
         cumulative_rewards = 0
 
         obs, _ = env.reset()
+        obs = option_critic._convert_dict_to_tensor(obs)
+        state = option_critic.prep_state(obs)
 
         logger.start_episode(steps)
         option_termination_states = {o: [] for o in range(args.num_options)}
@@ -222,36 +223,34 @@ def run(args):
             current_option = option_critic.current_option
             density = get_lanes_density(env)
 
-            state = option_critic.prep_state(obs)
             action, additional_info = option_critic.get_action(state, fixed_option)
             logp = additional_info["logp"]
             entropy = additional_info["entropy"]
             if additional_info["termination"]:
                 option_termination_states[current_option].append(density)
-            print(current_option, action[-1])
             next_obs, reward, done, terminate, info = env.step(action)
 
             # option_reward = reward
-            next_state = option_critic.prep_state(next_obs)
+            next_obs = option_critic._convert_dict_to_tensor(next_obs)
             buffer.push(
-                state,
+                obs,
                 option_critic.current_option,
                 reward,
                 # option_reward,
-                next_state,
+                next_obs,
                 done,
             )
 
             actor_loss, critic_loss = None, None
             if len(buffer) > args.batch_size:
                 actor_loss = actor_loss_fn(
-                    state,
+                    obs,
                     option_critic.current_option,
                     logp,
                     entropy,
                     reward,
                     done,
-                    next_state,
+                    next_obs,
                     option_critic,
                     option_critic_prime,
                     args,
@@ -272,6 +271,7 @@ def run(args):
 
                 if steps % args.freeze_interval == 0:
                     option_critic_prime.load_state_dict(option_critic.state_dict())
+                state = option_critic.prep_state(obs)
 
             # update global steps etc
             steps += 1

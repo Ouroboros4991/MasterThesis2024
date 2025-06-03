@@ -10,7 +10,8 @@ def visualize(
 ):
     env = utils.setup_env(
         traffic,
-        reward_fn="pressure",
+        # reward_fn="pressure",
+        reward_fn="intelli_light_prcol_reward",
         broken=broken,
         target_model=model,
         use_gui=True,

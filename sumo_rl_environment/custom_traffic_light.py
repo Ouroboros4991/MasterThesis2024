@@ -394,7 +394,10 @@ class CustomTrafficSignal(TrafficSignal):
         """IntelliLight reward function with out lanes capacility. Inspired by the PRCOL algorithm"""
         waiting_times = self.get_scaled_waiting_time(with_reset=True)
         delay = self.get_delay()
-        light_switches = int(self.steps_in_current_phase == 0)
+        if self.time_since_last_phase_change <= 5:
+            light_switches = 1
+        else:
+            light_switches = 0
         cars_leaving = self.get_cars_leaving()
         out_lanes_availability = self.get_out_lanes_usage()
 
@@ -405,7 +408,14 @@ class CustomTrafficSignal(TrafficSignal):
             "out_lanes_availability": np.max(out_lanes_availability),
         }
         reward = cars_leaving
+        # if self.id == "C2":
+        #     print("Base reward", reward)
         for key, value in rewards.items():
             reward_weight = self.reward_weights.get(key, 1)
+            # if self.id == "C2":
+            #     print(key, reward_weight * value)
+
             reward -= reward_weight * value
+        # if self.id == "C2":
+        #     print(reward)
         return reward

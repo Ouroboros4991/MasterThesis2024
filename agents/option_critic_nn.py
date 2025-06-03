@@ -129,7 +129,6 @@ class OptionCriticNeuralNetwork(nn.Module):
                 i for i in range(traffic_light.num_green_phases)
             ]
         possible_actions = list(self.actions_per_traffic_light.values())
-        print(possible_actions)
         # if len(possible_actions) == 1:
         #     self.action_list = possible_actions[0]
         # else:
@@ -196,7 +195,6 @@ class OptionCriticNeuralNetwork(nn.Module):
             if self.curr_op_len < self.start_min_policy_length:
                 should_terminate = False
         if should_terminate:
-
             # density = self.get_lanes_density(self.env)
             # self.option_termination_states[self.current_option].append(density)
             # TODO: make generic
@@ -211,9 +209,8 @@ class OptionCriticNeuralNetwork(nn.Module):
             self.update_option_lengths()
             self.curr_op_len = 0
         self.current_option = new_option
-        state = state.to(self.device)
-        action_dist = self.option_policies[self.current_option](state)
 
+        action_dist = self.option_policies[self.current_option](state)
         action_dist = [F.softmax(logit, dim=-1) for logit in action_dist]
         actions = [torch.multinomial(p, num_samples=1).squeeze(-1) for p in action_dist]
         # action_dist = Categorical(logits=action_dist)

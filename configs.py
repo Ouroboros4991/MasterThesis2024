@@ -125,7 +125,7 @@ ROUTE_SETTINGS = {
 INTELLI_LIGHT_REWARD = {"delay": 2, "waiting_time": 10, "light_switches": 3}
 INTELLI_LIGHT_PRCOL_REWARD = {
     "delay": 2,
-    "waiting_time": 10,
+    "waiting_time": 100,
     "light_switches": 3,
     "out_lanes_availability": 1,
 }
