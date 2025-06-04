@@ -38,16 +38,16 @@
     <flow id="flow_we_1" route="route_we" begin="1000" end="1500" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
     <flow id="flow_ws_1" route="route_ws" begin="1000" end="1500" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
 
-    <flow id="flow_ns_2" route="route_ns" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_nw_2" route="route_nw" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_ne_2" route="route_ne" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_sw_2" route="route_sw" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_sn_2" route="route_sn" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_se_2" route="route_se" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_en_2" route="route_en" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_ew_2" route="route_ew" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_es_2" route="route_es" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_wn_2" route="route_wn" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_we_2" route="route_we" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
-    <flow id="flow_ws_2" route="route_ws" begin="2000" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_ns_2" route="route_ns" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_nw_2" route="route_nw" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_ne_2" route="route_ne" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_sw_2" route="route_sw" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_sn_2" route="route_sn" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_se_2" route="route_se" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_en_2" route="route_en" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_ew_2" route="route_ew" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_es_2" route="route_es" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_wn_2" route="route_wn" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_we_2" route="route_we" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
+    <flow id="flow_ws_2" route="route_ws" begin="1500" end="3600" probability="0.01" departSpeed="max" departPos="base" departLane="best"/>
 </routes>

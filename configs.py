@@ -122,11 +122,11 @@ ROUTE_SETTINGS = {
 #     "light_switches": 2,
 # }
 
-INTELLI_LIGHT_REWARD = {"delay": 2, "waiting_time": 10, "light_switches": 3}
+INTELLI_LIGHT_REWARD = {"delay": 3, "waiting_time": 2, "light_switches": 1}
 INTELLI_LIGHT_PRCOL_REWARD = {
-    "delay": 2,
-    "waiting_time": 100,
-    "light_switches": 3,
+    "delay": 3,
+    "waiting_time": 2,
+    "light_switches": 1,
     "out_lanes_availability": 1,
 }
 
@@ -135,14 +135,14 @@ CURRICULUM_SETTINGS = {
     "custom-2way-single-intersection3": {"0-1000": 0, "1000-1500": 1, "1500-4000": 0},
     "3x3grid-3lanes2": {
         "0-1000": 0,
-        "1000-1500": 1,
-        "1500-4000": 0,
+        "1000-2800": 1,
+        "2800-4000": 0,
     },
 }
 
 DYNAMIC_LIGHT_SETTINGS = {
     "3x3grid-3lanes2": {
         "start_time": 1000,
-        "end_time": 1500,
+        "end_time": 2800,
     },
 }

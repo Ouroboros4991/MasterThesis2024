@@ -28,6 +28,7 @@ def train(
         experiment_name = f"a2c_broken_{traffic}_{steps}_steps"
     else:
         experiment_name = f"a2c_{traffic}_{steps}_steps"
+    experiment_name += "_finetuning"
     experiment_name += reward_fn
     if env.env.reward_weights:
         experiment_name += "_".join(
@@ -210,7 +211,7 @@ def main(reward_fn: str):
         traffic2 = "3x3grid-3lanes2"
         broken1 = False
         broken2 = True
-        out_lanes_availability_weights = [0, 1, 2, 5, 10]
+        out_lanes_availability_weights = [0, 1, 2, 3, 5, 10]
         reward_weights = []
         for out_lanes_availability in out_lanes_availability_weights:
             base_reward_weights = configs.INTELLI_LIGHT_REWARD.copy()

@@ -27,7 +27,9 @@ def visualize(
             action_dict, _states = agent.predict(obs)
         except AttributeError:
             # Option critic
+            obs = agent._convert_dict_to_tensor(obs)
             state = agent.prep_state(obs)
+            # state = agent.prep_state(obs)
             action_dict, additional_info = agent.get_action(state)
             # action_dict = agent.convert_action_to_dict(action)
         # print("Action dict:", action_dict)

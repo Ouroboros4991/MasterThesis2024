@@ -1,0 +1,5 @@
+dataset,avg_travel_time,avg_time_loss,avg_waiting_time,collisions,emergency_braking,emergency_stops,mean_lane_density,mean_queue
+a2c_partial_broken_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_3_waiting_time_2_light_switches_1_out_lanes_availability_1_broken,488.57303847769253,428.0901,402.2789000000001,0.0,0.01,0.0,5.24955771651561,83.18654166666667
+option_critic_discrete_2_options_3x3grid-3lanes2_248400_steps_broken,545.9245883702085,485.40139999999997,457.5553,0.0,0.01,0.01,5.636512965760322,89.64566666666667
+option_critic_discrete_curriculum_2_options_3x3grid-3lanes2_248400_steps_broken,543.3392444192607,482.8284999999999,455.0099000000001,0.0,0.02,0.0,5.6350040281973826,89.64984722222223
+option_critic_nn_curriculum_2_options_3x3grid-3lanes2_248400_steps_broken,488.27985002726166,440.2064,423.2901,0.0,0.0,0.0,15.127674418848606,265.8138333333333

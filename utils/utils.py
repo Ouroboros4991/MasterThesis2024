@@ -5,7 +5,8 @@ from agents import max_pressure
 from agents import sotl
 from agents import option_critic_nn
 from agents import option_critic_classification
-from agents import actor_critic_agent
+from agents import option_critic_multi_discrete
+
 import stable_baselines3
 
 from sumo_rl_environment.custom_env import CustomSumoEnvironment, BrokenLightEnvironment
@@ -154,10 +155,6 @@ def load_model(model: str, env: CustomSumoEnvironment):
             f"./models/{model}.zip",
         )
         return agent
-    elif model.startswith("actor_critic") or model.startswith("testing_finetuning"):
-        agent = actor_critic_agent.CustomActorCritic(env=env, device="cpu")
-        agent.load(f"./models/{model}")
-        return agent
     elif model.startswith("option_critic"):
         split_model = model.split("_")
         for index, item in enumerate(split_model):
@@ -176,6 +173,17 @@ def load_model(model: str, env: CustomSumoEnvironment):
             )
         elif model.startswith("option_critic_classification"):
             agent = option_critic_classification.OptionCriticClassification(
+                env=env,
+                num_options=num_options,
+                temperature=0.1,
+                eps_start=0.9,
+                eps_min=0.1,
+                eps_decay=0.999,
+                eps_test=0.05,
+                device="cpu",
+            )
+        elif model.startswith("option_critic_discrete"):
+            agent = option_critic_multi_discrete.OptionCriticMultiDiscrete(
                 env=env,
                 num_options=num_options,
                 temperature=0.1,

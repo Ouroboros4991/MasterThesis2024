@@ -21,6 +21,11 @@ import time
 
 import configs
 
+AGENTS = {
+    "option_critic_nn": OptionCriticNeuralNetwork,
+    "option_critic_discrete": OptionCriticMultiDiscrete,
+}
+
 
 def get_option(options_dict: dict, current_step: int):
     current_step = int(current_step)
@@ -36,7 +41,7 @@ parser = base_parser.generate_base_parser()
 parser.add_argument(
     "--optimal-eps", type=float, default=0.05, help="Epsilon when playing optimally"
 )
-parser.add_argument("--learning-rate", type=float, default=0.0001, help="Learning rate")
+parser.add_argument("--learning-rate", type=float, default=0.001, help="Learning rate")
 parser.add_argument("--gamma", type=float, default=0.99, help="Discount rate")
 parser.add_argument(
     "--epsilon-start", type=float, default=1.0, help=("Starting value for epsilon.")
@@ -51,10 +56,10 @@ parser.add_argument(
 parser.add_argument(
     "--max-history",
     type=int,
-    default=10000,
+    default=100000,
     help=("Maximum number of steps stored in replay"),
 )
-parser.add_argument("--batch-size", type=int, default=32, help="Batch size.")
+parser.add_argument("--batch-size", type=int, default=512, help="Batch size.")
 parser.add_argument(
     "--freeze-interval",
     type=int,
@@ -64,19 +69,19 @@ parser.add_argument(
 parser.add_argument(
     "--update-frequency",
     type=int,
-    default=4,
+    default=250,
     help=("Number of actions before each SGD update."),
 )
 parser.add_argument(
     "--termination-reg",
     type=float,
-    default=0.01,
+    default=0.25,
     help=("Regularization to decrease termination prob."),
 )
 parser.add_argument(
     "--entropy-reg",
     type=float,
-    default=0.01,
+    default=0.25,
     help=("Regularization to increase policy entropy."),
 )
 parser.add_argument(
@@ -85,7 +90,7 @@ parser.add_argument(
 parser.add_argument(
     "--temp",
     type=float,
-    default=1,
+    default=2,
     help="Action distribution softmax tempurature param.",
 )
 
@@ -118,6 +123,15 @@ parser.add_argument(
     help="Ensure that the option policy runs for at least n steps when starting the training",
 )
 
+parser.add_argument(
+    "-a",
+    "--agent",
+    type=str,
+    default="option_critic_discrete",
+    choices=AGENTS.keys(),
+    help="Agent to use",
+)
+
 
 def get_lanes_density(env):
     """Returns the density [0,1] of the vehicles in the incoming lanes of the intersection.
@@ -145,33 +159,32 @@ def get_lanes_max_queue(env):
 
 def run(args):
     experiment_name = (
-        f"option_critic_discrete_{args.num_options}_options_{args.traffic}"
+        f"{args.agent}_curriculum_{args.num_options}_options_{args.traffic}"
     )
     if args.start_min_policy_length:
         experiment_name += f"_start_min_policy_length_{args.start_min_policy_length}"
 
-    # experiment_name += "_weights_d3_w3_ls2_ola1"
-
     if args.hd_reg:
         experiment_name += "_hd_reg"
+    experiment_name += "outlanes_10"
     env = utils.setup_env(
         args.traffic,
         args.reward_fn,
         broken=args.broken,
         target_model="option_critic",
         broken_mode="partial",
-        # reward_weights={
-        #     "delay": 3,
-        #     "waiting_time": 3,
-        #     "light_switches": 2,
-        #     "out_lanes_availability": 1,
-        # },
+        reward_weights={
+            "delay": 3,
+            "waiting_time": 2,
+            "light_switches": 1,
+            "out_lanes_availability": 10,
+        },
     )
     env.reset()
     options_dict = configs.CURRICULUM_SETTINGS[args.traffic]
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    option_critic = OptionCriticMultiDiscrete(
+    option_critic = AGENTS[args.agent](
         env=env,
         num_options=args.num_options,
         temperature=args.temp,
@@ -186,10 +199,9 @@ def run(args):
     option_critic_prime = deepcopy(option_critic)
 
     # optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
-    # optim = torch.optim.Adam(
-    #     option_critic.parameters(), lr=args.learning_rate, weight_decay=0.01
-    # )
-    optim = torch.optim.RMSprop(option_critic.parameters(), lr=args.learning_rate)
+    optim = torch.optim.Adam(
+        option_critic.parameters(), lr=args.learning_rate, weight_decay=0.01
+    )
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -211,6 +223,8 @@ def run(args):
         cumulative_rewards = 0
 
         obs, _ = env.reset()
+        obs = option_critic._convert_dict_to_tensor(obs)
+        state = option_critic.prep_state(obs)
 
         logger.start_episode(steps)
         option_termination_states = {o: [] for o in range(args.num_options)}
@@ -222,36 +236,34 @@ def run(args):
             current_option = option_critic.current_option
             density = get_lanes_density(env)
 
-            state = option_critic.prep_state(obs)
             action, additional_info = option_critic.get_action(state, fixed_option)
             logp = additional_info["logp"]
             entropy = additional_info["entropy"]
             if additional_info["termination"]:
                 option_termination_states[current_option].append(density)
-            print(current_option, action[-1])
             next_obs, reward, done, terminate, info = env.step(action)
 
             # option_reward = reward
-            next_state = option_critic.prep_state(next_obs)
+            next_obs = option_critic._convert_dict_to_tensor(next_obs)
             buffer.push(
-                state,
+                obs,
                 option_critic.current_option,
                 reward,
                 # option_reward,
-                next_state,
+                next_obs,
                 done,
             )
 
             actor_loss, critic_loss = None, None
             if len(buffer) > args.batch_size:
                 actor_loss = actor_loss_fn(
-                    state,
+                    obs,
                     option_critic.current_option,
                     logp,
                     entropy,
                     reward,
                     done,
-                    next_state,
+                    next_obs,
                     option_critic,
                     option_critic_prime,
                     args,
@@ -272,6 +284,7 @@ def run(args):
 
                 if steps % args.freeze_interval == 0:
                     option_critic_prime.load_state_dict(option_critic.state_dict())
+                state = option_critic.prep_state(obs)
 
             # update global steps etc
             steps += 1

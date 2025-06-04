@@ -52,6 +52,7 @@ def run_episode(env, agent):
             action = action_dict
         except AttributeError:
             # Option critic
+            obs = agent._convert_dict_to_tensor(obs)
             state = agent.prep_state(obs)
             action, additional_info = agent.get_action(state)
             action_dict = action

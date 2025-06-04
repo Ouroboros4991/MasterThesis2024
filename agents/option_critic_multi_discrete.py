@@ -39,30 +39,25 @@ class OptionCriticMultiDiscrete(nn.Module):
         self.num_steps = 0
 
         self.in_features = self.calculate_in_features(env)
-        self.features_output_dim = 64  # Fixed output dimension for features
+        self.action_dims = [action_dim.n for action_dim in env.action_space]
         self.features = nn.Sequential(
-            nn.Linear(self.in_features, 128),
+            nn.Linear(self.in_features, 512),
             nn.ReLU(),
-            nn.Linear(128, self.features_output_dim),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
             nn.ReLU(),
         )
 
-        self.Q = nn.Linear(self.features_output_dim, num_options)  # Policy-Over-Options
-        self.terminations = nn.Linear(
-            self.features_output_dim, num_options
-        )  # Option-Termination
-
-        self.action_dims = [action_dim.n for action_dim in env.action_space]
-        self.option_policies = [
-            nn.Linear(
-                self.features_output_dim, sum(self.action_dims), device=self.device
-            )
-            for _ in range(num_options)
-        ]
+        self.Q = nn.Linear(256, num_options)  # Policy-Over-Options
+        self.terminations = nn.Linear(256, num_options)  # Option-Termination
+        self.options_W = nn.Parameter(
+            torch.zeros(num_options, 256, sum(self.action_dims))
+        )
+        self.options_b = nn.Parameter(torch.zeros(num_options, sum(self.action_dims)))
         self.to(device)
         self.train(not testing)
         self.start_min_policy_length = start_min_policy_length
-
         self.reset()
 
     def prep_state(self, obs):
@@ -163,20 +158,38 @@ class OptionCriticMultiDiscrete(nn.Module):
             self.update_option_lengths()
             self.curr_op_len = 0
         self.current_option = new_option
-        action_logits = self.option_policies[self.current_option](state)
-        # Add temperature scaling to encourage exploration
-        scaled_logits = action_logits / self.temperature
-        # Based on A2C implementation of stablebasaelines
-        distributions = [
-            Categorical(logits=split)
-            for split in torch.split(scaled_logits, list(self.action_dims), dim=1)
+        # action_logits = self.option_policies[self.current_option](state)
+        # # Add temperature scaling to encourage exploration
+        # scaled_logits = action_logits / self.temperature
+        # # Based on A2C implementation of stablebasaelines
+        # distributions = [
+        #     Categorical(logits=split)
+        #     for split in torch.split(scaled_logits, list(self.action_dims), dim=1)
+        # ]
+        # actions = [dist.sample() for dist in distributions]
+        # entropy = torch.stack([dist.entropy() for dist in distributions], dim=1).sum(
+        #     dim=1
+        # )
+        # log_prob = torch.stack(
+        #     [dist.log_prob(action) for dist, action in zip(distributions, actions)],
+        #     dim=1,
+        # ).sum(dim=1)
+        logits = (
+            state.data @ self.options_W[self.current_option]
+            + self.options_b[self.current_option]
+        )
+        action_dist = [
+            Categorical((split / self.temperature).softmax(dim=-1))
+            for split in torch.split(logits, list(self.action_dims), dim=1)
         ]
-        actions = [dist.sample() for dist in distributions]
-        entropy = torch.stack([dist.entropy() for dist in distributions], dim=1).sum(
+        # action_dist = Categorical(action_dist)
+
+        actions = [dist.sample() for dist in action_dist]
+        entropy = torch.stack([dist.entropy() for dist in action_dist], dim=1).sum(
             dim=1
         )
         log_prob = torch.stack(
-            [dist.log_prob(action) for dist, action in zip(distributions, actions)],
+            [dist.log_prob(action) for dist, action in zip(action_dist, actions)],
             dim=1,
         ).sum(dim=1)
         additional_info = {
@@ -210,3 +223,21 @@ class OptionCriticMultiDiscrete(nn.Module):
         self.current_option = 0
         self.curr_op_len = 0
         self.option_lengths = {opt: [] for opt in range(self.num_options)}
+
+    def save(self, path: str):
+        state_dict = {
+            "features": self.features.state_dict(),
+            "Q": self.Q.state_dict(),
+            "terminations": self.terminations.state_dict(),
+            "options_W": self.options_W,
+            "options_b": self.options_b,
+        }
+        torch.save(state_dict, path)
+
+    def load(self, path: str, map_location: str = "cpu"):
+        state_dict = torch.load(path, map_location=map_location)
+        self.Q.load_state_dict(state_dict["Q"])
+        self.terminations.load_state_dict(state_dict["terminations"])
+        self.options_W = state_dict["options_W"]
+        self.options_b = state_dict["options_b"]
+        self.features.load_state_dict(state_dict["features"])

@@ -55,6 +55,7 @@ def main(traffic: str, steps: int, reward_fn: str, broken: bool = False):
         reward_fn,
         broken=broken,
         target_model="a2c",
+        # broken_mode="partial",
     )
     env = Monitor(env)
 

@@ -346,7 +346,10 @@ class CustomTrafficSignal(TrafficSignal):
         """IntelliLight reward function"""
         waiting_times = self.get_scaled_waiting_time(with_reset=True)
         delay = self.get_delay()
-        light_switches = int(self.steps_in_current_phase == 0)
+        if self.time_since_last_phase_change <= 5:
+            light_switches = 1
+        else:
+            light_switches = 0
         cars_leaving = self.get_cars_leaving()
 
         rewards = {
@@ -369,7 +372,10 @@ class CustomTrafficSignal(TrafficSignal):
         waiting_times = self.get_scaled_waiting_time(with_reset=True)
         queue_lengths = self.get_lanes_queue()
         delay = self.get_delay()
-        light_switches = int(self.steps_in_current_phase == 0)
+        if self.time_since_last_phase_change <= 5:
+            light_switches = 1
+        else:
+            light_switches = 0
         cars_leaving = self.get_cars_leaving()
 
         max_queue_lane = np.argmax(queue_lengths)

@@ -41,16 +41,16 @@ python finetune_reward.py -r intelli_light_reward
 
 Training: 
 ```
-python a2c.py -t custom-2way-single-intersection-low -s 100000 -r intelli_light_reward
-python a2c.py -t custom-2way-single-intersection-high -s 100000 -r intelli_light_reward
+python a2c.py -t custom-2way-single-intersection-low -s 250000 -r intelli_light_reward
+python a2c.py -t custom-2way-single-intersection-high -s 250000 -r intelli_light_reward
 ```
 
 Evaluation: 
 ```
-python evaluate.py -t custom-2way-single-intersection-low -m a2c_custom-2way-single-intersection-low_100000_stepsintelli_light_reward_delay_2_waiting_time_10_light_switches_3;
-python evaluate.py -t custom-2way-single-intersection-low -m a2c_custom-2way-single-intersection-high_100000_stepsintelli_light_reward_delay_2_waiting_time_10_light_switches_3;
-python evaluate.py -t custom-2way-single-intersection-high -m a2c_custom-2way-single-intersection-low_100000_stepsintelli_light_reward_delay_2_waiting_time_10_light_switches_3;
-python evaluate.py -t custom-2way-single-intersection-high -m a2c_custom-2way-single-intersection-high_100000_stepsintelli_light_reward_delay_2_waiting_time_10_light_switches_3;
+python evaluate.py -t custom-2way-single-intersection-low -m a2c_custom-2way-single-intersection-low_250000_stepsintelli_light_reward_delay_3_waiting_time_2_light_switches_1;
+python evaluate.py -t custom-2way-single-intersection-low -m a2c_custom-2way-single-intersection-high_250000_stepsintelli_light_reward_delay_3_waiting_time_2_light_switches_1;
+python evaluate.py -t custom-2way-single-intersection-high -m a2c_custom-2way-single-intersection-low_250000_stepsintelli_light_reward_delay_3_waiting_time_2_light_switches_1;
+python evaluate.py -t custom-2way-single-intersection-high -m a2c_custom-2way-single-intersection-high_250000_stepsintelli_light_reward_delay_3_waiting_time_2_light_switches_1;
 ```
 
 Investigation
@@ -68,8 +68,8 @@ python option_critic_training_curriculum.py -t custom-2way-single-intersection3 
 
 Evaluation:
 ```
-python evaluate.py -t custom-2way-single-intersection3 -m option_critic_nn_2_options_custom-2way-single-intersection3_250000_steps;
-python evaluate.py -t custom-2way-single-intersection3 -m option_critic_curriculum_nn_2_options_custom-2way-single-intersection3_250000_steps;
+python evaluate.py -t custom-2way-single-intersection3 -m option_critic_discrete_2_options_custom-2way-single-intersection3_250000_steps;
+python evaluate.py -t custom-2way-single-intersection3 -m option_critic_discrete_curriculum_2_options_custom-2way-single-intersection3_250000_steps;
 ```
 
 ### Visualization
@@ -77,7 +77,7 @@ python evaluate.py -t custom-2way-single-intersection3 -m option_critic_curricul
 Important for the visualisation is that you do not set the traci environment variable.
 
 ```
-python visualize_sumo.py -t custom-2way-single-intersection3 -m option_critic_nn_curriculum_2_options_custom-2way-single-intersection3_250000_steps
+python visualize_sumo.py -t custom-2way-single-intersection3 -m option_critic_discrete_curriculum_2_options_custom-2way-single-intersection3_250000_steps
 ```
 
 # Experiment 2
@@ -148,10 +148,10 @@ python a2c.py -t 3x3grid-3lanes2 -s 250000 -r intelli_light_prcol_reward -b
 Evaluate
 
 ```
-python evaluate.py -t 3x3grid-3lanes2 -m a2c_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_2_waiting_time_10_light_switches_3_out_lanes_availability_1;
-python evaluate.py -t 3x3grid-3lanes2 -m a2c_broken_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_2_waiting_time_10_light_switches_3_out_lanes_availability_1;
-python evaluate.py -t 3x3grid-3lanes2 -b -m a2c_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_2_waiting_time_10_light_switches_3_out_lanes_availability_1;
-python evaluate.py -t 3x3grid-3lanes2 -b -m a2c_broken_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_2_waiting_time_10_light_switches_3_out_lanes_availability_1;
+python evaluate.py -t 3x3grid-3lanes2 -m a2c_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_3_waiting_time_2_light_switches_1_out_lanes_availability_1;
+python evaluate.py -t 3x3grid-3lanes2 -m a2c_broken_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_3_waiting_time_2_light_switches_1_out_lanes_availability_1;
+python evaluate.py -t 3x3grid-3lanes2 -b -m a2c_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_3_waiting_time_2_light_switches_1_out_lanes_availability_1;
+python evaluate.py -t 3x3grid-3lanes2 -b -m a2c_broken_3x3grid-3lanes2_250000_stepsintelli_light_prcol_reward_delay_3_waiting_time_2_light_switches_1_out_lanes_availability_1;
 ```
 
 
@@ -167,6 +167,6 @@ python option_critic_training_curriculum.py -t 3x3grid-3lanes2 --broken -r intel
 
 Evaluation:
 ```
-python evaluate.py -t 3x3grid-3lanes2 --broken --broken-mode partial -m option_critic_nn_2_options_3x3grid-3lanes2_248400_steps;
-python evaluate.py -t 3x3grid-3lanes2 --broken --broken-mode partial -m option_critic_nn_curriculum_2_options_3x3grid-3lanes2_248400_steps;
+python evaluate.py -t 3x3grid-3lanes2 --broken --broken-mode partial -m option_critic_discrete_2_options_3x3grid-3lanes2_248400_steps;
+python evaluate.py -t 3x3grid-3lanes2 --broken --broken-mode partial -m option_critic_discrete_curriculum_2_options_3x3grid-3lanes2_248400_steps;
 ```

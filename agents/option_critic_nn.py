@@ -81,14 +81,7 @@ class OptionCriticNeuralNetwork(nn.Module):
 
         self.reset()
 
-    def prep_state(self, obs):
-        """Convert the provided observation to a tensor
-
-        Args:
-            obs (Any): Obs provided by the environment
-        """
-
-        # Unnest observation
+    def _convert_dict_to_tensor(self, obs):
         obs_array = []
         if isinstance(obs, dict):
             for _, obs_arr in obs.items():
@@ -109,6 +102,11 @@ class OptionCriticNeuralNetwork(nn.Module):
         obs_tensor = obs_tensor.to(self.device)
         return obs_tensor
 
+    def prep_state(self, obs):
+        state = obs
+        state = state.to(self.device)
+        return state
+
     def calculate_in_features(self, env):
         """Calculate the size of the observation space based on the environment.
 
@@ -116,10 +114,10 @@ class OptionCriticNeuralNetwork(nn.Module):
             env (_type_): _description_
 
         Returns:
-            _type_: _description_
+            int: Number of features in the observation space
         """
         obs, _ = env.reset()
-        converted_obs = self.prep_state(obs)
+        converted_obs = self._convert_dict_to_tensor(obs)
         return converted_obs.shape[1]
 
     def init_actions(self, env):
