@@ -7,9 +7,7 @@ import torch.nn as nn
 from torch.distributions import Categorical, Bernoulli
 
 from math import exp
-import numpy as np
 
-from agents.option_critic_utils import to_tensor
 
 
 class OptionCriticForced(nn.Module):

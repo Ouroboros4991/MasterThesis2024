@@ -172,7 +172,6 @@ def run(args):
     while steps < args.max_steps_total:
 
         cumulative_rewards = 0
-        average_cumulative_rewards = 0.0
 
         obs, _ = env.reset()
         greedy_option = 0

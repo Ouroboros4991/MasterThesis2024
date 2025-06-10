@@ -1,10 +1,7 @@
 # Based on the code found here: https://github.com/lweitkamp/option-critic-pytorch/blob/master/option_critic.py
-"""Functionality shared across option critic agents.
-"""
+"""Functionality shared across option critic agents."""
 
 import torch
-import torch.nn as nn
-from torch.distributions import Categorical, Bernoulli
 
 import math
 import itertools
@@ -12,6 +9,8 @@ import numpy as np
 
 
 def to_tensor(obs):
+    if isinstance(obs, torch.Tensor):
+        return obs
     obs = np.asarray(obs)
     obs = torch.from_numpy(obs).float()
     return obs
@@ -68,17 +67,15 @@ def critic_loss(model, model_prime, data_batch, args):
     masks = 1 - torch.FloatTensor(dones).to(model.device)
 
     # The loss is the TD loss of Q and the update target, so we need to calculate Q
-    states = obs.squeeze(0) # model.get_state(obs).squeeze(0)
+    states = model.prep_state(to_tensor(obs)).squeeze(0)
     Q = model.get_Q(states)
 
     # the update target contains Q_next, but for stable learning we use prime network for this
-    # next_states_prime = model_prime.get_state(next_obs).squeeze(0)
-    next_states_prime = next_obs.squeeze(0)
+    next_states_prime = model_prime.prep_state(to_tensor(next_obs)).squeeze(0)
     next_Q_prime = model_prime.get_Q(next_states_prime)  # detach?
 
     # Additionally, we need the beta probabilities of the next state
-    # next_states = model.get_state(next_obs).squeeze(0)
-    next_states = next_obs.squeeze(0)
+    next_states = model.prep_state(to_tensor(next_obs)).squeeze(0)
     next_termination_probs = model.get_terminations(next_states).detach()
     next_options_term_prob = next_termination_probs[batch_idx, options]
 
@@ -90,7 +87,7 @@ def critic_loss(model, model_prime, data_batch, args):
 
     # to update Q we want to use the actual network, not the prime
     td_err = (Q[batch_idx, options] - gt.detach()).pow(2).mul(0.5).mean()
-    return td_err    
+    return td_err
 
 
 def critic_loss_w_option_reward(model, model_prime, data_batch, args):
@@ -102,7 +99,8 @@ def critic_loss_w_option_reward(model, model_prime, data_batch, args):
     masks = 1 - torch.FloatTensor(dones).to(model.device)
 
     # The loss is the TD loss of Q and the update target, so we need to calculate Q
-    states = obs.squeeze(0) # model.get_state(obs).squeeze(0)
+    states = obs.squeeze(0)
+    # model.get_state(obs).squeeze(0)
     Q = model.get_Q(states)
 
     # the update target contains Q_next, but for stable learning we use prime network for this
@@ -124,16 +122,25 @@ def critic_loss_w_option_reward(model, model_prime, data_batch, args):
 
     # to update Q we want to use the actual network, not the prime
     td_err = (Q[batch_idx, options] - gt.detach()).pow(2).mul(0.5).mean()
-    return td_err   
+    return td_err
+
 
 def actor_loss(
-    obs, option, logp, entropy, reward, done, next_obs, model, model_prime,
+    obs,
+    option,
+    logp,
+    entropy,
+    reward,
+    done,
+    next_obs,
+    model,
+    model_prime,
     args,
-    option_densities: dict=None,
+    option_densities: dict = None,
 ):
-    state = obs # model.get_state(obs)
-    next_state = next_obs # model.get_state(next_obs)
-    next_state_prime = next_obs # model_prime.get_state(next_obs)
+    state = model.prep_state(obs)
+    next_state = model.prep_state(next_obs)
+    next_state_prime = model_prime.prep_state(next_obs)
 
     option_term_prob = model.get_terminations(state)[:, option]
     next_option_term_prob = model.get_terminations(next_state)[:, option].detach()
@@ -155,14 +162,14 @@ def actor_loss(
     # + the termination reg
     # So the termination reg compensates when the Q value is much lower
     # than the max Q value
-    # The third term causes the loss to only take into account 
+    # The third term causes the loss to only take into account
     # the termination loss when the episode is not done
     termination_loss = (
         option_term_prob
         * (Q[option].detach() - Q.max(dim=-1)[0].detach() + args.termination_reg)
         * (1 - done)
     )
-   
+
     # if option_densities:
     #     sd_option_density = np.std(option_densities[option])
     #     termination_loss = termination_loss + sd_option_density
@@ -174,5 +181,3 @@ def actor_loss(
         hd_reg = __hellinger_regulizer(state, model)
         actor_loss += hd_reg
     return actor_loss
-
-

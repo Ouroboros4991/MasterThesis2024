@@ -4,8 +4,9 @@ Based on: https://github.com/docwza/sumolights
 
 import random
 
+
 class MaxPressureAgent:
-    
+
     def __init__(self, env, *args, **kwargs):
         self.env = env
         self.traffic_light_configs = {
@@ -29,7 +30,7 @@ class MaxPressureAgent:
 
         Returns:
             dict: Dict containig the incoming and outgoing lanes for each phase
-        """        
+        """
         ts_id = traffic_light.id
         # More information on these functions can be found here:
         # https://sumo.dlr.de/pydoc/traci._trafficlight.html#TrafficLightDomain-getControlledLinks
@@ -40,13 +41,12 @@ class MaxPressureAgent:
             incoming_lanes = set()
             if len(phase.state) != len(controlled_lanes):
                 raise Exception("Failed to match lanes to phase state")
-            print(phase.state)
             for lane_state_index, lane_state_char in enumerate(str(phase.state)):
-                if lane_state_char.lower() == 'g':
+                if lane_state_char.lower() == "g":
                     lane = controlled_lanes[lane_state_index]
                     incoming_lanes.add(lane)
             # if not incoming_lanes:
-                # raise Exception("No green lanes found for phase")
+            # raise Exception("No green lanes found for phase")
             outgoing_lanes = set()
             for lane in incoming_lanes:
                 for link in links:
@@ -61,41 +61,40 @@ class MaxPressureAgent:
 
     def get_pressure(self, inc_lanes, out_lanes) -> int:
         """Returns the pressure (#veh leaving - #veh approaching) of the intersection."""
-        return sum(self.env.sumo.lane.getLastStepVehicleNumber(lane) for lane in out_lanes) - sum(
-            self.env.sumo.lane.getLastStepVehicleNumber(lane) for lane in inc_lanes
-        )
-        
+        return sum(
+            self.env.sumo.lane.getLastStepVehicleNumber(lane) for lane in out_lanes
+        ) - sum(self.env.sumo.lane.getLastStepVehicleNumber(lane) for lane in inc_lanes)
 
     def max_pressure(self, tf_id):
         """Returns the phase with the highest pressure.
         If all phases have 0 pressure, return a random phase.
         If multiple phases have the same pressure, select one randomly
         """
-        phase_lanes = self.traffic_light_configs[tf_id]['phase_lanes']
-        n_phases = self.traffic_light_configs[tf_id]['n_phases']
+        phase_lanes = self.traffic_light_configs[tf_id]["phase_lanes"]
+        n_phases = self.traffic_light_configs[tf_id]["n_phases"]
         phase_pressure = {}
         no_vehicle_phases = []
-        #compute pressure for all green movements
+        # compute pressure for all green movements
         for phase_id in range(n_phases):
-            inc_lanes = phase_lanes[phase_id]['incoming']
-            out_lanes = phase_lanes[phase_id]['outgoing']
+            inc_lanes = phase_lanes[phase_id]["incoming"]
+            out_lanes = phase_lanes[phase_id]["outgoing"]
             pressure = abs(self.get_pressure(inc_lanes, out_lanes))
             phase_pressure[phase_id] = pressure
             if pressure == 0:
                 no_vehicle_phases.append(phase_id)
         ###if no vehicles randomly select a phase
         if len(no_vehicle_phases) == n_phases:
-            return random.randint(0, n_phases-1)
+            return random.randint(0, n_phases - 1)
         else:
-            #choose phase with max pressure
-            #if two phases have equivalent pressure
-            #select one with more green movements
-            #return max(phase_pressure, key=lambda p:phase_pressure[p])
+            # choose phase with max pressure
+            # if two phases have equivalent pressure
+            # select one with more green movements
+            # return max(phase_pressure, key=lambda p:phase_pressure[p])
             phase_pressure = [(p, phase_pressure[p]) for p in phase_pressure]
-            phase_pressure = sorted(phase_pressure, key=lambda p:p[1], reverse=True)
-            phase_pressure = [p for p in phase_pressure if p[1] == phase_pressure[0][1] ]
+            phase_pressure = sorted(phase_pressure, key=lambda p: p[1], reverse=True)
+            phase_pressure = [p for p in phase_pressure if p[1] == phase_pressure[0][1]]
             return random.choice(phase_pressure)[0]
-    
+
     def predict(self, observation):
         """Predict the action for the current state.
         Args:

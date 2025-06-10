@@ -1,15 +1,9 @@
 import numpy as np
 import pandas as pd
-import operator
 
 from sumo_rl_environment.custom_env import CustomSumoEnvironment
-import gymnasium as gym
 import torch
 
-import stable_baselines3
-from agents import base_cyclic
-from agents import option_critic
-from agents import option_critic_forced
 from agents import option_critic_nn
 
 from agents.option_critic_utils import to_tensor
@@ -53,7 +47,7 @@ def run_episode(env, agent):
     try:
         state = agent.get_state(to_tensor(obs))
         greedy_option = agent.greedy_option(state)
-    except Exception as e:
+    except Exception:
         greedy_option = 0
     while not terminate:
         obs = np.append(obs, curr_op_len)
@@ -61,7 +55,7 @@ def run_episode(env, agent):
             current_option = greedy_option
         try:
             action, _states = agent.predict(obs)
-        except AttributeError as e:
+        except AttributeError:
             # Option critic
             state = agent.get_state(to_tensor(obs))
             action, logp, entropy = agent.get_action(state, current_option)
@@ -76,7 +70,7 @@ def run_episode(env, agent):
             termination_prob = agent.get_terminations(state)[
                 :, current_option
             ].tolist()[0]
-        except Exception as e:
+        except Exception:
             pass
 
         if option_termination:
@@ -129,7 +123,6 @@ def single_episodes(env, agent, prefix):
 
 def multiple_episodes(env, agent, prefix):
     n_episodes = 100
-    average_cumulative_reward = 0.0
     results = []
 
     for episode_number in range(n_episodes):
@@ -235,7 +228,7 @@ if __name__ == "__main__":
     #         "./models/option_critic_2_options_with_deliberation_custom-2way-single-intersection_500000_steps"
     #     )["model_params"]
     # )
-    
+
     agent = option_critic_nn.OptionCriticNeuralNetwork(
         in_features=env.observation_space.shape[0] + 1,
         num_actions=env.action_space.n,
